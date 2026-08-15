@@ -6,7 +6,7 @@ DeepSeek Harness 原生插件：**自动拦截带 PowerShell 坑位的 pwsh 工�
 
 ## 特性
 
-- **自动门禁**：订阅官方 `tools/pre-execute` 拦截点，每次 `pwsh` 工具调用前自动静态检查；命中 R2–R9 阻断级坑位 → 返回 `deny`（deny reason 即修复指引，模型看到报错后修复重试）；仅 R1 建议级 → 放行；
+- **自动门禁**：订阅官方 `tools/pre-execute` 拦截点，每次 `pwsh` 工具调用前自动静态检查；命中 R2–R11 阻断级坑位 → 返回 `deny`（deny reason 即修复指引，模型看到报错后修复重试）；仅 R1 建议级 → 放行；
 - **内置技能**：通过 `ctx.skills.registerProvider`（官方 `dsh-skill-badge` 同款写法）暴露 `powershell-check` 技能，会话目录可见、可加载；
 - **单规则源**：规则引擎 `checker.js` 由插件门禁与 CLI 共用，改一处即全生效；
 - **自检**：`--selftest` 内置 31 组正反例。

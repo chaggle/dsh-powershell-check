@@ -6,7 +6,7 @@ whenToUse: Whenever PowerShell execution is involved - calling the pwsh tool (fo
 
 # PowerShell 执行检查（powershell-check）
 
-本技能由插件 **dsh-powershell-check** 提供（官方形态：原生 Cordis 插件 + bundled 技能 provider）。插件安装后，**每次 pwsh 工具调用都会自动经过 `tools/pre-execute` 门禁**：命中 R2–R9 阻断级坑位 → 直接拒绝，deny reason 即为修复指引；仅命中 R1 建议级 → 放行。本技能用于门禁之外的场景：生成 .ps1、把命令嵌入模板、检查脚本文件，以及查阅规则与修复方法。
+本技能由插件 **dsh-powershell-check** 提供（官方形态：原生 Cordis 插件 + bundled 技能 provider）。插件安装后，**每次 pwsh 工具调用都会自动经过 `tools/pre-execute` 门禁**：命中 R2–R11 阻断级坑位 → 直接拒绝，deny reason 即为修复指引；仅命中 R1 建议级 → 放行。本技能用于门禁之外的场景：生成 .ps1、把命令嵌入模板、检查脚本文件，以及查阅规则与修复方法。
 
 ## 运行检查器（手动检查）
 

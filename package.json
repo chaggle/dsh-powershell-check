@@ -1,6 +1,6 @@
 {
   "name": "dsh-powershell-check",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Native DeepSeek Harness plugin: gates every pwsh tool call against the PowerShell pitfalls from the blog post 'PowerShell 实战踩坑大全' via the official tools/pre-execute interception point, and bundles the powershell-check skill.",
   "keywords": ["deepseek-harness", "cordis", "plugin", "powershell", "pwsh", "skill"],
   "license": "MIT",
