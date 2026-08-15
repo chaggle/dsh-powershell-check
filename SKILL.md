@@ -31,23 +31,23 @@ Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 
 | Rule | Level | Detects | Fix | Blog |
 | --- | --- | --- | --- | --- |
-| R1 | advisory | wsl/Windows feature queries without chcp 65001 | prefix `chcp 65001 | Out-Null` before Chinese output | 1. GBK mojibake |
-| R2 | blocking | `$var:` followed by a colon (non-scope name) | use `${var}:`; `$env:` style scopes are exempt | 2. $var: parsing |
-| R3 | blocking | `) ? ...` ternary shape | PS 5.1 has no ternary; use if/else assignment | 3. Ternary |
-| R4 | blocking | `$WORD` followed by `.` or `` inside double quotes | use single quotes when `$` must stay literal | 4. $WINDOWS |
-| R5 | blocking | Start-Process wrapping an external command | call `& exe` directly; watch -ArgumentList quoting | 6. Start-Process |
-| R6 | blocking | `-FeatureName A, B` array form | loop with foreach, one name at a time | 7. FeatureName arrays |
-| R7 | blocking | `/Dismount-Image` verb | use `/Unmount-Image` | 8. DISM verbs |
-| R8 | blocking | RestoreHealth with /Source | source must be <= current build, or Windows Update | 9. Source version |
-| R9 | blocking | curl -L combined with -C - | parallel `-r` ranges are faster | 10. CDN download |
-| R10 | blocking | bare npm/npx/pnpm without the .cmd suffix | use npm.cmd / npx.cmd / pnpm.cmd explicitly | 11. ExecutionPolicy |
-| R11 | blocking | `&&` / `||` chains (PS 5.1) | use `;`, `if ($LASTEXITCODE -eq 0)`, or separate lines | 12. Chain operators |
-| R12 | advisory | ConvertTo-Json without -Depth (default 2 truncates nested data) | add `-Depth 100` (or a value matching the data) | 13. JSON depth |
-| R13 | advisory | `$_` inside a foreach ($x in ...) loop | use the loop variable, or switch to ForEach-Object | 14. foreach $_ |
-| R14 | blocking | single `=` as a comparison inside if/while | use `-eq` (`if ($x -eq 5)`) | 15. = vs -eq |
-| R15 | advisory | PS 7+ only syntax (`-AsHashtable`, `-Parallel`, `-AsByteStream`, `??`, `?.`) | confirm the runtime or use 5.1 equivalents | 16. PS7-only syntax |
-| R16 | advisory | cmd-style commands / `%VAR%` env syntax | use Remove-Item / Copy-Item / Move-Item / New-Item and `$env:VAR` | 17. cmd style |
-| R17 | advisory | Write-Host output bypasses the pipeline | use Write-Output for capturable results | 18. Write-Host |
+| R1 | advisory | wsl/Windows feature queries without chcp 65001 | prefix `chcp 65001 | Out-Null` before Chinese output | 2-3. GBK mojibake |
+| R2 | blocking | `$var:` followed by a colon (non-scope name) | use `${var}:`; `$env:` style scopes are exempt | 1-1. $var: parsing |
+| R3 | blocking | `) ? ...` ternary shape | PS 5.1 has no ternary; use if/else assignment | 1-2. Ternary |
+| R4 | blocking | `$WORD` followed by `.` or `` inside double quotes | use single quotes when `$` must stay literal | 2-1. $WINDOWS |
+| R5 | blocking | Start-Process wrapping an external command | call `& exe` directly; watch -ArgumentList quoting | 3-1. Start-Process |
+| R6 | blocking | `-FeatureName A, B` array form | loop with foreach, one name at a time | 4-1. FeatureName arrays |
+| R7 | blocking | `/Dismount-Image` verb | use `/Unmount-Image` | 4-2. DISM verbs |
+| R8 | blocking | RestoreHealth with /Source | source must be <= current build, or Windows Update | 4-3. Source version |
+| R9 | blocking | curl -L combined with -C - | parallel `-r` ranges are faster | 3-4. CDN download |
+| R10 | blocking | bare npm/npx/pnpm without the .cmd suffix | use npm.cmd / npx.cmd / pnpm.cmd explicitly | 3-2. ExecutionPolicy |
+| R11 | blocking | `&&` / `||` chains (PS 5.1) | use `;`, `if ($LASTEXITCODE -eq 0)`, or separate lines | 1-3. Chain operators |
+| R12 | advisory | ConvertTo-Json without -Depth (default 2 truncates nested data) | add `-Depth 100` (or a value matching the data) | 5-1. JSON depth |
+| R13 | advisory | `$_` inside a foreach ($x in ...) loop | use the loop variable, or switch to ForEach-Object | 5-2. foreach $_ |
+| R14 | blocking | single `=` as a comparison inside if/while | use `-eq` (`if ($x -eq 5)`) | 1-4. = vs -eq |
+| R15 | advisory | PS 7+ only syntax (`-AsHashtable`, `-Parallel`, `-AsByteStream`, `??`, `?.`) | confirm the runtime or use 5.1 equivalents | 1-5. PS7-only syntax |
+| R16 | advisory | cmd-style commands / `%VAR%` env syntax | use Remove-Item / Copy-Item / Move-Item / New-Item and `$env:VAR` | 3-3. cmd style |
+| R17 | advisory | Write-Host output bypasses the pipeline | use Write-Output for capturable results | 2-4. Write-Host |
 
 ### Writing rules for generated .ps1 (not covered by the checker)
 
@@ -92,23 +92,23 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 | 规则 | 级别 | 检测内容 | 修复 | 博客章节 |
 | --- | --- | --- | --- | --- |
-| R1 | 建议 | 涉及 wsl/Windows 功能查询但未见 chcp 65001 | 输出中文前先 `chcp 65001 | Out-Null`（或设置 Console 的 OutputEncoding） | 一、GBK 乱码 |
-| R2 | 阻断 | $var: 形式的变量紧跟冒号（非作用域名） | 改 ${var}: 显式界定（$env: 等作用域除外） | 二、$var: 解析 |
-| R3 | 阻断 | 右括号后跟问号的三元运算符形态 | PS 5.1 无三元，改 if/else 赋值 | 三、三元运算符 |
-| R4 | 阻断 | 双引号内 $WORD 后跟点号或反斜杠（路径陷阱） | 需要字面 $ 的路径改用单引号 | 四、$WINDOWS 展开 |
-| R5 | 阻断 | 使用 Start-Process 包装外部命令 | 直接 & exe 调用；注意 -ArgumentList 引号 | 六、Start-Process 坑 |
-| R6 | 阻断 | Get-WindowsOptionalFeature 的 -FeatureName 传数组 | 用 foreach 逐个查询 | 七、FeatureName 数组 |
-| R7 | 阻断 | 出现 /Dismount-Image 动词 | 用 /Unmount-Image | 八、DISM 动词 |
-| R8 | 阻断 | RestoreHealth 与 /Source 同现 | 源版本须不高于当前系统，否则走 Windows Update | 九、源版本 |
-| R9 | 阻断 | curl 同时带 -L 与 -C - | 分段 -r 并行下载更快 | 十、CDN 加速 |
-| R10 | 阻断 | npm/npx/pnpm 不带 .cmd 后缀 | 显式用 npm.cmd / npx.cmd / pnpm.cmd（npm.ps1 被 ExecutionPolicy 拦截） | 十一、ExecutionPolicy |
-| R11 | 阻断 | PS 5.1 出现 && / || 链式运算符 | 改分号或 if ($LASTEXITCODE -eq 0)；cmd/bash 内部除外 | 十二、链式运算符 |
-| R12 | 建议 | ConvertTo-Json 未指定 -Depth（默认 2 截断嵌套数据） | 显式加 -Depth 100（或按数据实际深度设值） | 十三、JSON 深度 |
-| R13 | 建议 | foreach 循环体内使用 $_ | 用循环变量，或换 ForEach-Object { $_ } | 十四、foreach 的 $_ |
-| R14 | 阻断 | if/while 条件里用单等号 = 当比较 | 用 -eq（if ($x -eq 5)） | 十五、= 与 -eq |
-| R15 | 建议 | PS 7+ 专属语法（-AsHashtable/-Parallel/-AsByteStream/??/?.) | 确认运行环境或用 5.1 等价写法 | 十六、PS7+ 语法 |
-| R16 | 建议 | cmd 风格命令/%VAR% 环境变量语法 | 用 Remove-Item/Copy-Item/Move-Item/New-Item 与 $env:VAR | 十七、cmd 风格 |
-| R17 | 建议 | Write-Host 输出不进管道 | 需捕获结果用 Write-Output | 十八、Write-Host |
+| R1 | 建议 | 涉及 wsl/Windows 功能查询但未见 chcp 65001 | 输出中文前先 `chcp 65001 | Out-Null`（或设置 Console 的 OutputEncoding） | 2-3、GBK 乱码 |
+| R2 | 阻断 | $var: 形式的变量紧跟冒号（非作用域名） | 改 ${var}: 显式界定（$env: 等作用域除外） | 1-1、$var: 解析 |
+| R3 | 阻断 | 右括号后跟问号的三元运算符形态 | PS 5.1 无三元，改 if/else 赋值 | 1-2、三元运算符 |
+| R4 | 阻断 | 双引号内 $WORD 后跟点号或反斜杠（路径陷阱） | 需要字面 $ 的路径改用单引号 | 2-1、$WINDOWS 展开 |
+| R5 | 阻断 | 使用 Start-Process 包装外部命令 | 直接 & exe 调用；注意 -ArgumentList 引号 | 3-1、Start-Process 坑 |
+| R6 | 阻断 | Get-WindowsOptionalFeature 的 -FeatureName 传数组 | 用 foreach 逐个查询 | 4-1、FeatureName 数组 |
+| R7 | 阻断 | 出现 /Dismount-Image 动词 | 用 /Unmount-Image | 4-2、DISM 动词 |
+| R8 | 阻断 | RestoreHealth 与 /Source 同现 | 源版本须不高于当前系统，否则走 Windows Update | 4-3、源版本 |
+| R9 | 阻断 | curl 同时带 -L 与 -C - | 分段 -r 并行下载更快 | 3-4、CDN 加速 |
+| R10 | 阻断 | npm/npx/pnpm 不带 .cmd 后缀 | 显式用 npm.cmd / npx.cmd / pnpm.cmd（npm.ps1 被 ExecutionPolicy 拦截） | 3-2、ExecutionPolicy |
+| R11 | 阻断 | PS 5.1 出现 && / || 链式运算符 | 改分号或 if ($LASTEXITCODE -eq 0)；cmd/bash 内部除外 | 1-3、链式运算符 |
+| R12 | 建议 | ConvertTo-Json 未指定 -Depth（默认 2 截断嵌套数据） | 显式加 -Depth 100（或按数据实际深度设值） | 5-1、JSON 深度 |
+| R13 | 建议 | foreach 循环体内使用 $_ | 用循环变量，或换 ForEach-Object { $_ } | 5-2、foreach 的 $_ |
+| R14 | 阻断 | if/while 条件里用单等号 = 当比较 | 用 -eq（if ($x -eq 5)） | 1-4、= 与 -eq |
+| R15 | 建议 | PS 7+ 专属语法（-AsHashtable/-Parallel/-AsByteStream/??/?.) | 确认运行环境或用 5.1 等价写法 | 1-5、PS7+ 语法 |
+| R16 | 建议 | cmd 风格命令/%VAR% 环境变量语法 | 用 Remove-Item/Copy-Item/Move-Item/New-Item 与 $env:VAR | 3-3、cmd 风格 |
+| R17 | 建议 | Write-Host 输出不进管道 | 需捕获结果用 Write-Output | 2-4、Write-Host |
 
 ### 生成 .ps1 的写作规则（检查器覆盖不到的写作侧）
 

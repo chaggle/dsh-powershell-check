@@ -1,7 +1,7 @@
 {
   "name": "@chaggle/dsh-powershell-check",
   "description": "Native DeepSeek Harness plugin: gates every pwsh tool call against the PowerShell pitfalls from the blog post 'PowerShell 实战踩坑大全' via the official tools/pre-execute interception point, and bundles the powershell-check skill.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",

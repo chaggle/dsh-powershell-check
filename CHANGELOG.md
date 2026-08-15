@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 — 2026-08-15
+
+- **博客文章重组**：18 个坑位按主题重排为五组（① 语法与解析 ② 字符串/转义/输出 ③ 外部命令与进程 ④ Windows 组件与 DISM ⑤ 数据与迭代），小节编号 x-y 并标注 R 编号，文末新增规则总表；
+- **全链路章节引用同步**：checker.ts、SKILL.md（EN/ZH）、README（EN/ZH）、博客技能脚本与 SKILL.md 的"博客章节"列统一为 §x-y（R1→§2-3、R2→§1-1 … R17→§2-4）；
+- 规则与行为不变：selftest 51 例、vitest 24 例全绿。
+- **Blog article reorganized**: 18 pitfalls regrouped into five themes with x-y section ids and an R-number map; all section references synced across checker.ts, SKILL.md, README, and the blog skill (R1→§2-3 … R17→§2-4).
+
+
 ## 0.5.0 — 2026-08-15
 
 - **PSScriptAnalyzer 深度检查**：新增 `analyzer: psscriptanalyzer` 配置——经官方 `ctx.shell` seam（hooks 桥同款）对每条 pwsh 命令跑 `Invoke-ScriptAnalyzer`（临时 .ps1 + BOM，进程级 ExecutionPolicy Bypass 兼容 harness 沙箱）；Error/ParseError 拦截并附分析器消息，Warning 记日志放行；模块缺失自动降级内置规则；

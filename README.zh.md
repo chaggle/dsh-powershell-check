@@ -72,23 +72,23 @@ node scripts/check-pwsh.mjs --selftest
 
 | 规则 | 级别 | 检测内容 | 博客章节 |
 | --- | --- | --- | --- |
-| R1 | 建议 | 涉及 wsl/Windows 功能查询但未见 `chcp 65001` | 一、GBK 乱码 |
-| R2 | 阻断 | `$var:` 被解析成驱动器限定语法 | 二 |
-| R3 | 阻断 | `) ? ...` 三元形态（PS 5.1） | 三 |
-| R4 | 阻断 | 双引号内 `$WORD` 后跟 `.`/``（路径陷阱） | 四 |
-| R5 | 阻断 | `Start-Process` 包装外部命令 | 六 |
-| R6 | 阻断 | `-FeatureName A, B` 数组形式 | 七 |
-| R7 | 阻断 | `/Dismount-Image` 动词 | 八 |
-| R8 | 阻断 | `RestoreHealth` 源版本比系统新 | 九 |
-| R9 | 阻断 | `curl -L` 与 `-C -` 组合 | 十 |
-| R10 | 阻断 | 裸 `npm`/`npx`/`pnpm` 不带 `.cmd` 后缀 | 十一、ExecutionPolicy |
-| R11 | 阻断 | `&&` / `||` 链式（PS 5.1） | 十二 |
-| R12 | 建议 | `ConvertTo-Json` 未指定 `-Depth`（默认 2 截断嵌套数据） | 十三 |
-| R13 | 建议 | `foreach` 循环体内使用 `$_` | 十四 |
-| R14 | 阻断 | `if`/`while` 条件里用单等号 `=` 当比较 | 十五 |
-| R15 | 建议 | PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`） | 十六 |
-| R16 | 建议 | cmd 风格命令 / `%VAR%` 环境变量语法 | 十七 |
-| R17 | 建议 | `Write-Host` 输出不进管道 | 十八 |
+| R1 | 建议 | 涉及 wsl/Windows 功能查询但未见 `chcp 65001` | 2-3 |
+| R2 | 阻断 | `$var:` 被解析成驱动器限定语法 | 1-1 |
+| R3 | 阻断 | `) ? ...` 三元形态（PS 5.1） | 1-2 |
+| R4 | 阻断 | 双引号内 `$WORD` 后跟 `.`/``（路径陷阱） | 2-1 |
+| R5 | 阻断 | `Start-Process` 包装外部命令 | 3-1 |
+| R6 | 阻断 | `-FeatureName A, B` 数组形式 | 4-1 |
+| R7 | 阻断 | `/Dismount-Image` 动词 | 4-2 |
+| R8 | 阻断 | `RestoreHealth` 源版本比系统新 | 4-3 |
+| R9 | 阻断 | `curl -L` 与 `-C -` 组合 | 3-4 |
+| R10 | 阻断 | 裸 `npm`/`npx`/`pnpm` 不带 `.cmd` 后缀 | 3-2 |
+| R11 | 阻断 | `&&` / `||` 链式（PS 5.1） | 1-3 |
+| R12 | 建议 | `ConvertTo-Json` 未指定 `-Depth`（默认 2 截断嵌套数据） | 5-1 |
+| R13 | 建议 | `foreach` 循环体内使用 `$_` | 5-2 |
+| R14 | 阻断 | `if`/`while` 条件里用单等号 `=` 当比较 | 1-4 |
+| R15 | 建议 | PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`） | 1-5 |
+| R16 | 建议 | cmd 风格命令 / `%VAR%` 环境变量语法 | 3-3 |
+| R17 | 建议 | `Write-Host` 输出不进管道 | 2-4 |
 
 ## PSScriptAnalyzer 深度检查
 

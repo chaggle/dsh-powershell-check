@@ -72,23 +72,23 @@ Exit codes: 0 = PASS, 1 = FAIL (violations listed with fixes), 2 = usage error.
 
 | Rule | Level | Detects | Blog section |
 | --- | --- | --- | --- |
-| R1 | advisory | wsl/Windows feature queries without `chcp 65001` | §1 GBK mojibake |
-| R2 | blocking | `$var:` parsed as drive-qualified syntax | §2 |
-| R3 | blocking | `) ? ...` ternary shape (PS 5.1) | §3 |
-| R4 | blocking | `$WORD` followed by `.`/`` inside double quotes (path trap) | §4 |
-| R5 | blocking | `Start-Process` wrapping an external command | §6 |
-| R6 | blocking | `-FeatureName A, B` array form | §7 |
-| R7 | blocking | `/Dismount-Image` verb | §8 |
-| R8 | blocking | `RestoreHealth` with a newer source | §9 |
-| R9 | blocking | `curl -L` combined with `-C -` | §10 |
-| R10 | blocking | bare `npm`/`npx`/`pnpm` without the `.cmd` suffix | §11 ExecutionPolicy |
-| R11 | blocking | `&&` / `||` chains (PS 5.1) | §12 |
-| R12 | advisory | `ConvertTo-Json` without `-Depth` (default 2 truncates nested data) | §13 |
-| R13 | advisory | `$_` inside a `foreach ($x in ...)` loop | §14 |
-| R14 | blocking | single `=` as a comparison inside `if`/`while` | §15 |
-| R15 | advisory | PS 7+ only syntax (`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`) | §16 |
-| R16 | advisory | cmd-style commands / `%VAR%` env syntax | §17 |
-| R17 | advisory | `Write-Host` output bypasses the pipeline | §18 |
+| R1 | advisory | wsl/Windows feature queries without `chcp 65001` | §1-1-3 |
+| R2 | blocking | `$var:` parsed as drive-qualified syntax | §1-1 |
+| R3 | blocking | `) ? ...` ternary shape (PS 5.1) | §1-2 |
+| R4 | blocking | `$WORD` followed by `.`/`` inside double quotes (path trap) | §1-1-1 |
+| R5 | blocking | `Start-Process` wrapping an external command | §1-2-1 |
+| R6 | blocking | `-FeatureName A, B` array form | §1-1-1-1 |
+| R7 | blocking | `/Dismount-Image` verb | §1-1-1-2 |
+| R8 | blocking | `RestoreHealth` with a newer source | §1-1-1-3 |
+| R9 | blocking | `curl -L` combined with `-C -` | §1-2-4 |
+| R10 | blocking | bare `npm`/`npx`/`pnpm` without the `.cmd` suffix | §1-2-2 |
+| R11 | blocking | `&&` / `||` chains (PS 5.1) | §1-3 |
+| R12 | advisory | `ConvertTo-Json` without `-Depth` (default 2 truncates nested data) | §5-1 |
+| R13 | advisory | `$_` inside a `foreach ($x in ...)` loop | §5-2 |
+| R14 | blocking | single `=` as a comparison inside `if`/`while` | §1-4 |
+| R15 | advisory | PS 7+ only syntax (`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`) | §1-5 |
+| R16 | advisory | cmd-style commands / `%VAR%` env syntax | §1-2-3 |
+| R17 | advisory | `Write-Host` output bypasses the pipeline | §1-1-4 |
 
 ## PSScriptAnalyzer deep check
 
