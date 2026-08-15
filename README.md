@@ -10,7 +10,7 @@ Installable as a profile plugin: `dsh plugin --profile <name> add @chaggle/dsh-p
 - **Bundled skill** — exposes `powershell-check` through `ctx.skills.registerProvider` (the `dsh-skill-badge` pattern), visible and loadable in every session catalog.
 - **Bilingual** — rule text, CLI output (`--lang en|zh`), deny reasons, and docs ship in English and Simplified Chinese.
 - **Single rule source** — the rules engine (`src/checker.ts`) is shared by the gate and the CLI; update once, both follow.
-- **Self-test** — `--selftest` runs a 31-case positive/negative battery.
+- **Self-test** — `--selftest` runs a 51-case positive/negative battery (R1–R17, AI-generated-script focused).
 
 ## Install
 
@@ -82,6 +82,12 @@ Exit codes: 0 = PASS, 1 = FAIL (violations listed with fixes), 2 = usage error.
 | R9 | blocking | `curl -L` combined with `-C -` | §10 |
 | R10 | blocking | bare `npm`/`npx`/`pnpm` without the `.cmd` suffix | §11 ExecutionPolicy |
 | R11 | blocking | `&&` / `||` chains (PS 5.1) | §12 |
+| R12 | advisory | `ConvertTo-Json` without `-Depth` (default 2 truncates nested data) | §13 |
+| R13 | advisory | `$_` inside a `foreach ($x in ...)` loop | §14 |
+| R14 | blocking | single `=` as a comparison inside `if`/`while` | §15 |
+| R15 | advisory | PS 7+ only syntax (`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`) | §16 |
+| R16 | advisory | cmd-style commands / `%VAR%` env syntax | §17 |
+| R17 | advisory | `Write-Host` output bypasses the pipeline | §18 |
 
 ## How it works (official extension points)
 

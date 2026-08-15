@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-08-15
+
+- **新增 AI 生成脚本规则 R12–R17**（调研 GitHub/网页同类插件后沉淀）：R12 `ConvertTo-Json` 缺 `-Depth` 截断（PowerShell #5604 系列）、R13 `foreach` 内误用 `$_`、R14 `if/while` 单等号当比较、R15 PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`）、R16 cmd 风格命令与 `%VAR%` 语法（对照 opencode windows-shell-reliability）、R17 `Write-Host` 输出不进管道；
+- 规则 R1–R17：阻断级 R2–R11、R14，其余建议级；自检扩至 51 例全绿，vitest 12 例全绿；
+- **调研结论**：dsh 生态（awesome-dsh-plugin 287 插件）与通用 AI agent 生态暂无同类「AI PowerShell 坑位门禁」插件；相邻工具为官方 PSScriptAnalyzer（通用 linter）与 Copilot/harness 通用 hooks；
+- **New rules R12–R17 for AI-generated scripts** (from ecosystem research): JSON -Depth truncation, foreach $_ misuse, = vs -eq, PS 7+ only syntax, cmd-style/%VAR% mixing, Write-Host pipeline bypass; selftest now 51 cases.
+
+
 ## 0.3.0 — 2026-08-15
 
 - **发布标准对齐 dsh-tianshu-tui**：scoped 包名 `@chaggle/dsh-powershell-check`、`dsh.bundle.patch` + 自带 `cordis.patch.yml`（`dsh plugin --profile <n> add @chaggle/dsh-powershell-check` 即可安装）、TS 源码 + tsc/tsdown 双阶段构建（lib/ 提交入库，github 安装免重建）、`peerDependencies` 对齐 `@deepseek-ai/*` rc 范围、`NOTICE`/`SOURCE-MAP.md`/`README.i18n.yaml`、vitest 测试、CI（node 22/24 矩阵）、`v<semver>` 标签；

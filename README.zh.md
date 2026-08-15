@@ -10,7 +10,7 @@
 - **内置技能**：通过 `ctx.skills.registerProvider`（官方 `dsh-skill-badge` 同款写法）暴露 `powershell-check`，每个会话目录可见、可加载；
 - **中英双语**：规则文本、CLI 输出（`--lang en|zh`）、deny reason 与文档均提供中英版本；
 - **单一规则源**：规则引擎（`src/checker.ts`）被门禁与 CLI 共用，改一处全生效；
-- **自检**：`--selftest` 内置 31 组正反例。
+- **自检**：`--selftest` 内置 51 组正反例（R1–R17，聚焦 AI 生成脚本）。
 
 ## 安装
 
@@ -82,6 +82,12 @@ node scripts/check-pwsh.mjs --selftest
 | R9 | 阻断 | `curl -L` 与 `-C -` 组合 | 十 |
 | R10 | 阻断 | 裸 `npm`/`npx`/`pnpm` 不带 `.cmd` 后缀 | 十一、ExecutionPolicy |
 | R11 | 阻断 | `&&` / `||` 链式（PS 5.1） | 十二 |
+| R12 | 建议 | `ConvertTo-Json` 未指定 `-Depth`（默认 2 截断嵌套数据） | 十三 |
+| R13 | 建议 | `foreach` 循环体内使用 `$_` | 十四 |
+| R14 | 阻断 | `if`/`while` 条件里用单等号 `=` 当比较 | 十五 |
+| R15 | 建议 | PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`） | 十六 |
+| R16 | 建议 | cmd 风格命令 / `%VAR%` 环境变量语法 | 十七 |
+| R17 | 建议 | `Write-Host` 输出不进管道 | 十八 |
 
 ## 工作原理（官方扩展点）
 

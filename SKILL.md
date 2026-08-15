@@ -27,7 +27,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 
-### Rules (R1–R11, mapped to the blog sections)
+### Rules (R1–R17, mapped to the blog sections)
 
 | Rule | Level | Detects | Fix | Blog |
 | --- | --- | --- | --- | --- |
@@ -42,6 +42,12 @@ Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 | R9 | blocking | curl -L combined with -C - | parallel `-r` ranges are faster | 10. CDN download |
 | R10 | blocking | bare npm/npx/pnpm without the .cmd suffix | use npm.cmd / npx.cmd / pnpm.cmd explicitly | 11. ExecutionPolicy |
 | R11 | blocking | `&&` / `||` chains (PS 5.1) | use `;`, `if ($LASTEXITCODE -eq 0)`, or separate lines | 12. Chain operators |
+| R12 | advisory | ConvertTo-Json without -Depth (default 2 truncates nested data) | add `-Depth 100` (or a value matching the data) | 13. JSON depth |
+| R13 | advisory | `$_` inside a foreach ($x in ...) loop | use the loop variable, or switch to ForEach-Object | 14. foreach $_ |
+| R14 | blocking | single `=` as a comparison inside if/while | use `-eq` (`if ($x -eq 5)`) | 15. = vs -eq |
+| R15 | advisory | PS 7+ only syntax (`-AsHashtable`, `-Parallel`, `-AsByteStream`, `??`, `?.`) | confirm the runtime or use 5.1 equivalents | 16. PS7-only syntax |
+| R16 | advisory | cmd-style commands / `%VAR%` env syntax | use Remove-Item / Copy-Item / Move-Item / New-Item and `$env:VAR` | 17. cmd style |
+| R17 | advisory | Write-Host output bypasses the pipeline | use Write-Output for capturable results | 18. Write-Host |
 
 ### Writing rules for generated .ps1 (not covered by the checker)
 
@@ -78,7 +84,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 退出码：0 = PASS；1 = FAIL（输出清单含修复）；2 = 用法错误或空输入。
 
-### 内置规则（R1–R11，与博客章节一一对应）
+### 内置规则（R1–R17，与博客章节一一对应）
 
 | 规则 | 级别 | 检测内容 | 修复 | 博客章节 |
 | --- | --- | --- | --- | --- |
@@ -93,6 +99,12 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 | R9 | 阻断 | curl 同时带 -L 与 -C - | 分段 -r 并行下载更快 | 十、CDN 加速 |
 | R10 | 阻断 | npm/npx/pnpm 不带 .cmd 后缀 | 显式用 npm.cmd / npx.cmd / pnpm.cmd（npm.ps1 被 ExecutionPolicy 拦截） | 十一、ExecutionPolicy |
 | R11 | 阻断 | PS 5.1 出现 && / || 链式运算符 | 改分号或 if ($LASTEXITCODE -eq 0)；cmd/bash 内部除外 | 十二、链式运算符 |
+| R12 | 建议 | ConvertTo-Json 未指定 -Depth（默认 2 截断嵌套数据） | 显式加 -Depth 100（或按数据实际深度设值） | 十三、JSON 深度 |
+| R13 | 建议 | foreach 循环体内使用 $_ | 用循环变量，或换 ForEach-Object { $_ } | 十四、foreach 的 $_ |
+| R14 | 阻断 | if/while 条件里用单等号 = 当比较 | 用 -eq（if ($x -eq 5)） | 十五、= 与 -eq |
+| R15 | 建议 | PS 7+ 专属语法（-AsHashtable/-Parallel/-AsByteStream/??/?.) | 确认运行环境或用 5.1 等价写法 | 十六、PS7+ 语法 |
+| R16 | 建议 | cmd 风格命令/%VAR% 环境变量语法 | 用 Remove-Item/Copy-Item/Move-Item/New-Item 与 $env:VAR | 十七、cmd 风格 |
+| R17 | 建议 | Write-Host 输出不进管道 | 需捕获结果用 Write-Output | 十八、Write-Host |
 
 ### 生成 .ps1 的写作规则（检查器覆盖不到的写作侧）
 

@@ -25,11 +25,11 @@ export interface CheckResult {
     readonly advisory: Rule[];
     readonly all: Rule[];
 }
-/** All pitfall rules: R1 advisory, R2–R11 blocking. */
+/** Pitfall rules: R1/R12/R13/R15/R16/R17 advisory, the rest blocking. */
 export declare const RULES: readonly Rule[];
 /** Run every rule against one command and return the matching rule objects. */
 export declare function run(cmd: string): Rule[];
-/** Gate view: split matches into blocking (R2–R11) and advisory (R1) buckets. */
+/** Gate view: split matches into blocking (R2–R11, R14) and advisory buckets. */
 export declare function check(cmd: string): CheckResult;
 /** Render matched rules in the requested language, for deny reasons and CLI output. */
 export declare function formatHits(hits: readonly Rule[], lang?: Lang): string;
