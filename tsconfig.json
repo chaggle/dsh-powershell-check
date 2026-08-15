@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2024",
+    "lib": ["es2024"],
+    "strict": true,
+    "noImplicitAny": true,
+    "noEmit": true,
+    "rewriteRelativeImportExtensions": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["src", "tests"]
+}
+

@@ -1,21 +1,76 @@
 {
-  "name": "dsh-powershell-check",
-  "version": "0.2.0",
+  "name": "@chaggle/dsh-powershell-check",
   "description": "Native DeepSeek Harness plugin: gates every pwsh tool call against the PowerShell pitfalls from the blog post 'PowerShell 实战踩坑大全' via the official tools/pre-execute interception point, and bundles the powershell-check skill.",
-  "keywords": ["deepseek-harness", "cordis", "plugin", "powershell", "pwsh", "skill"],
-  "license": "MIT",
+  "version": "0.3.0",
   "type": "module",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
   "exports": {
-    ".": "./index.js",
-    "./checker": "./checker.js",
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./checker": {
+      "types": "./lib/types/checker.d.ts",
+      "default": "./lib/checker.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./SKILL.md": "./SKILL.md",
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
-  "files": ["index.js", "checker.js", "SKILL.md", "scripts"],
-  "engines": { "node": ">=18" },
+  "files": [
+    "lib/index.js",
+    "lib/checker.js",
+    "lib/invariant.js",
+    "cordis.patch.yml",
+    "lib/types/**/*.d.ts",
+    "NOTICE",
+    "SOURCE-MAP.md",
+    "SKILL.md",
+    "scripts"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chaggle/dsh-powershell-check.git"
+  },
+  "homepage": "https://github.com/chaggle/dsh-powershell-check",
+  "bugs": {
+    "url": "https://github.com/chaggle/dsh-powershell-check/issues"
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "selftest": "node scripts/check-pwsh.mjs --selftest",
-    "smoke": "node test/smoke.mjs"
+    "verify": "npm run typecheck && npm test && npm run build && node scripts/check-pwsh.mjs --selftest"
+  },
+  "engines": {
+    "node": "^22.19 || >=24"
+  },
+  "keywords": ["dsh", "agent-harness", "deepseek-harness", "powershell", "pwsh", "plugin", "skill", "cordis"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-skill": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-skill": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@types/node": "24",
+    "tsdown": "0.22.14",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
 

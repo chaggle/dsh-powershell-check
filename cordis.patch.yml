@@ -1,0 +1,8 @@
+# The dsh-powershell-check bundle patch: mounts the PowerShell pitfall gate
+# over dsh-base under the stable plugin id `dsh-powershell-check`.
+# Install with: dsh plugin --profile <name> add @chaggle/dsh-powershell-check
+
+- insert:
+    - id: dsh-powershell-check
+      name: '@chaggle/dsh-powershell-check'
+

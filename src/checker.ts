@@ -1,21 +1,42 @@
 /**
- * dsh-powershell-check — static pitfall rules engine for PowerShell commands.
+ * Static pitfall rules engine for PowerShell commands.
  *
  * Rules distilled from the blog post 'PowerShell 实战踩坑大全'
  * (https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/).
- * Shared by the cordis plugin (index.js) and the CLI (assets/scripts/check-pwsh.mjs).
+ * Shared by the cordis plugin (src/index.ts) and the CLI (scripts/check-pwsh.mjs).
+ * Compiled by tsc + tsdown into lib/ (see tsdown.config.ts).
  */
 
-'use strict'
+/** Output language for rule text. */
+export type Lang = 'zh' | 'en'
+
+/** One pitfall rule. */
+export interface Rule {
+  readonly id: string
+  readonly severity: 'advisory' | 'blocking'
+  readonly title: string
+  readonly titleEn: string
+  readonly fix: string
+  readonly fixEn: string
+  readonly blog: string
+  readonly test: (cmd: string) => boolean
+}
+
+/** Gate view of one check: blocking (denied) vs advisory (allowed) matches. */
+export interface CheckResult {
+  readonly blocking: Rule[]
+  readonly advisory: Rule[]
+  readonly all: Rule[]
+}
 
 const BS = String.fromCharCode(92)
 
-/** R1 is an advisory (console-encoding hint); R2–R9 are blocking pitfalls. */
+/** R1 is an advisory (console-encoding hint); R2–R11 are blocking pitfalls. */
 const KNOWN_SCOPES = ['env', 'script', 'global', 'local', 'private', 'using', 'function', 'variable', 'PSDefaultParameterValues', 'PSScriptRoot', 'PSCommandPath', 'PID', 'true', 'false', 'null']
 
-function isWordChar(c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c === '_' }
-function isLetter(c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_' }
-function hasWord(text, word) {
+function isWordChar(c: string): boolean { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c === '_' }
+function isLetter(c: string): boolean { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_' }
+function hasWord(text: string, word: string): boolean {
   const low = text.toLowerCase()
   const w = word.toLowerCase()
   let idx = 0
@@ -28,9 +49,11 @@ function hasWord(text, word) {
   return false
 }
 
+interface VarHit { readonly start: number; readonly end: number; readonly braced: boolean; readonly name: string; readonly followedBy: string }
+
 /** Collect $name / ${name} variable occurrences. */
-function findVars(cmd) {
-  const res = []
+function findVars(cmd: string): VarHit[] {
+  const res: VarHit[] = []
   for (let i = 0; i < cmd.length; i++) {
     if (cmd[i] !== '$') continue
     if (cmd[i + 1] === '{') {
@@ -48,20 +71,20 @@ function findVars(cmd) {
   return res
 }
 
-function r1Gbk(cmd) {
+function r1Gbk(cmd: string): boolean {
   const producesText = hasWord(cmd, 'wsl') || cmd.includes('Get-WindowsOptionalFeature') || cmd.includes('Enable-WindowsOptionalFeature') || cmd.includes('RestoreHealth') || cmd.includes('Cleanup-Image') || cmd.includes('/Get-')
   if (!producesText) return false
   if (hasWord(cmd, 'chcp') || cmd.includes('65001') || /OutputEncoding/.test(cmd)) return false
   return true
 }
-function r2VarColon(cmd) {
+function r2VarColon(cmd: string): boolean {
   for (const v of findVars(cmd)) {
     if (v.braced) continue
     if (v.followedBy === ':' && KNOWN_SCOPES.indexOf(v.name) < 0) return true
   }
   return false
 }
-function r3Ternary(cmd) {
+function r3Ternary(cmd: string): boolean {
   for (let i = 0; i < cmd.length - 1; i++) {
     if (cmd[i] !== ')') continue
     let j = i + 1
@@ -71,7 +94,7 @@ function r3Ternary(cmd) {
   return false
 }
 /** R4: a $WORD inside a double-quoted string followed by a dot or a backslash (path trap). */
-function r4DollarInDoubleQuotedPath(cmd) {
+function r4DollarInDoubleQuotedPath(cmd: string): boolean {
   const lines = cmd.split('\n')
   for (const ln of lines) {
     let inDQ = false
@@ -90,8 +113,8 @@ function r4DollarInDoubleQuotedPath(cmd) {
   }
   return false
 }
-function r5StartProcess(cmd) { return hasWord(cmd, 'Start-Process') }
-function r6FeatureNameArray(cmd) {
+function r5StartProcess(cmd: string): boolean { return hasWord(cmd, 'Start-Process') }
+function r6FeatureNameArray(cmd: string): boolean {
   const lines = cmd.split('\n')
   for (const ln of lines) {
     if (!ln.includes('Get-WindowsOptionalFeature')) continue
@@ -101,15 +124,15 @@ function r6FeatureNameArray(cmd) {
   }
   return false
 }
-function r7DismountImage(cmd) { return cmd.toLowerCase().includes('/dismount-image') }
-function r8RestoreHealthSource(cmd) {
+function r7DismountImage(cmd: string): boolean { return cmd.toLowerCase().includes('/dismount-image') }
+function r8RestoreHealthSource(cmd: string): boolean {
   const lines = cmd.split('\n')
   for (const ln of lines) {
     if (ln.includes('RestoreHealth') && ln.toLowerCase().includes('/source')) return true
   }
   return false
 }
-function r9CurlResume(cmd) {
+function r9CurlResume(cmd: string): boolean {
   const lines = cmd.split('\n')
   for (const ln of lines) {
     const low = ln.toLowerCase()
@@ -118,9 +141,8 @@ function r9CurlResume(cmd) {
   }
   return false
 }
-// R10: npm/npx/pnpm invoked without the .cmd suffix — PowerShell blocks
-// npm.ps1 (running scripts is disabled / ExecutionPolicy) while npm.cmd runs.
-function r10NpmCmd(cmd) {
+/** R10: npm/npx/pnpm invoked without the .cmd suffix — PowerShell blocks npm.ps1 (ExecutionPolicy). */
+function r10NpmCmd(cmd: string): boolean {
   const names = ['npm', 'npx', 'pnpm']
   const allowedBefore = ' ;|&' + String.fromCharCode(9)
   for (const name of names) {
@@ -136,15 +158,15 @@ function r10NpmCmd(cmd) {
   }
   return false
 }
-// R11: && / || chain operators do not exist in Windows PowerShell 5.1 (PS 7+ only).
-function r11NoAndOr(cmd) {
+/** R11: && / || chain operators do not exist in Windows PowerShell 5.1 (PS 7+ only). */
+function r11NoAndOr(cmd: string): boolean {
   const lines = cmd.split('\n')
   for (const ln of lines) {
     // cmd.exe / bash contexts have their own valid && / || — skip those lines
     if (hasWord(ln, 'bash') || hasWord(ln, 'zsh') || hasWord(ln, 'sh')) continue
     const low = ln.toLowerCase()
     if (low.includes('cmd /c') || low.includes('cmd.exe /c')) continue
-    let q = null
+    let q: string | null = null
     for (let i = 0; i < ln.length - 1; i++) {
       const ch = ln[i]
       if (ch === '"' || ch === '\'') {
@@ -159,42 +181,50 @@ function r11NoAndOr(cmd) {
   return false
 }
 
-/**【power 坑位规则表：R1 建议级，R2–R9 阻断级】**/
-export const RULES = [
-  { id: 'R1', severity: 'advisory', title: '中文输出可能 GBK 乱码', blog: '§一', test: r1Gbk,
-    fix: '命令涉及 wsl/Windows 功能查询且未见 chcp：输出中文前先 `chcp 65001 | Out-Null`（或设置 [Console]::OutputEncoding）。' },
-  { id: 'R2', severity: 'blocking', title: '$var: 被解析成驱动器限定变量', blog: '§二', test: r2VarColon,
-    fix: '`$attempt:` 会被当成 `$env:Path` 式作用域语法，改为 `${attempt}:` 显式界定。' },
-  { id: 'R3', severity: 'blocking', title: 'PowerShell 5.1 没有三元运算符', blog: '§三', test: r3Ternary,
-    fix: '`($a -gt 0) ? "yes" : "no"` 在 PS 5.1 解析报错；改用 `$v = if ($a -gt 0) { "yes" } else { "no" }`。' },
-  { id: 'R4', severity: 'blocking', title: '双引号里的 $变量 被展开（路径陷阱）', blog: '§四', test: r4DollarInDoubleQuotedPath,
-    fix: '双引号内 $WORD 后跟 . 或 \\ 时路径中的 $ 会被展开（如 "C:\\$WINDOWS.~BT\\Sources\\..."）；需要字面 $ 的路径改用单引号。确属展开意图可忽略。' },
-  { id: 'R5', severity: 'blocking', title: 'Start-Process 包装外部命令', blog: '§六', test: r5StartProcess,
-    fix: '-ArgumentList 不会自动加引号（路径含空格碎参数）；后台 Start-Process curl 下载会内容损坏。能直接调用就别包一层：`& curl.exe ...`。' },
-  { id: 'R6', severity: 'blocking', title: 'Get-WindowsOptionalFeature 的 FeatureName 不支持数组', blog: '§七', test: r6FeatureNameArray,
-    fix: '`-FeatureName A, B` 报 Cannot convert System.Object[]；用 `foreach ($n in "A","B") { ... -FeatureName $n }`。' },
-  { id: 'R7', severity: 'blocking', title: 'DISM 动词 /Dismount-Image 不存在', blog: '§八', test: r7DismountImage,
-    fix: '正确动词是 `/Unmount-Image`，否则报 错误:87 且 wim 一直挂载占空间。' },
-  { id: 'R8', severity: 'blocking', title: 'RestoreHealth 源版本可能比系统新', blog: '§九', test: r8RestoreHealthSource,
-    fix: '0x800f0915 = 修复源比当前系统新；源要求同版本或更旧，或走 Windows Update。' },
-  { id: 'R9', severity: 'blocking', title: 'curl -L 与 -C - 组合可能拖慢 CDN 下载', blog: '§十', test: r9CurlResume,
-    fix: '部分 CDN 上 `curl -L` 与 `-C -` 组合会拖慢速度；优先 HEAD 拿 Content-Length → 分段 `-r` 并行 → copy /b 合并。' },
-  { id: 'R10', severity: 'blocking', title: 'npm/npx/pnpm 不带 .cmd 后缀（npm.ps1 被 ExecutionPolicy 拦截）', blog: '§十一', test: r10NpmCmd,
-    fix: 'PowerShell 默认禁止运行脚本，PATH 里的 npm.ps1 加载报错（running scripts is disabled）；显式用 `npm.cmd run ...` / `npx.cmd ...` / `pnpm.cmd ...`。' },
-  { id: 'R11', severity: 'blocking', title: 'PowerShell 5.1 没有 && / || 链式运算符', blog: '§十二', test: r11NoAndOr,
-    fix: '`a && b` 在 PS 5.1 解析报错（PS 7+ 才支持）；改用 `a; b`、`if ($LASTEXITCODE -eq 0) { b }` 或分行执行。cmd/bash 内部除外。' },
+/** All pitfall rules: R1 advisory, R2–R11 blocking. */
+export const RULES: readonly Rule[] = [
+  { id: 'R1', severity: 'advisory', title: '中文输出可能 GBK 乱码', titleEn: 'Possible GBK mojibake for Chinese console output', blog: '§一', test: r1Gbk,
+    fix: '命令涉及 wsl/Windows 功能查询且未见 chcp：输出中文前先 `chcp 65001 | Out-Null`（或设置 [Console]::OutputEncoding）。',
+    fixEn: 'Commands touching wsl/Windows feature queries without chcp: prefix `chcp 65001 | Out-Null` (or set [Console]::OutputEncoding) before reading Chinese output.' },
+  { id: 'R2', severity: 'blocking', title: '$var: 被解析成驱动器限定变量', titleEn: '$var: parsed as a drive-qualified variable', blog: '§二', test: r2VarColon,
+    fix: '`$attempt:` 会被当成 `$env:Path` 式作用域语法，改为 `${attempt}:` 显式界定。',
+    fixEn: '`$attempt:` is parsed as scope/drive syntax (like $env:Path); use `${attempt}:` to delimit explicitly.' },
+  { id: 'R3', severity: 'blocking', title: 'PowerShell 5.1 没有三元运算符', titleEn: 'PowerShell 5.1 has no ternary operator', blog: '§三', test: r3Ternary,
+    fix: '`($a -gt 0) ? "yes" : "no"` 在 PS 5.1 解析报错；改用 `$v = if ($a -gt 0) { "yes" } else { "no" }`。',
+    fixEn: '`($a -gt 0) ? "yes" : "no"` is a parse error in PS 5.1; use `$v = if ($a -gt 0) { "yes" } else { "no" }`.' },
+  { id: 'R4', severity: 'blocking', title: '双引号里的 $变量 被展开（路径陷阱）', titleEn: 'Double-quoted $var expanded (path trap)', blog: '§四', test: r4DollarInDoubleQuotedPath,
+    fix: '双引号内 $WORD 后跟 . 或 \\ 时路径中的 $ 会被展开（如 "C:\\$WINDOWS.~BT\\Sources\\..."）；需要字面 $ 的路径改用单引号。确属展开意图可忽略。',
+    fixEn: 'Inside double quotes a $WORD followed by . or \\ is expanded (e.g. "C:\\$WINDOWS.~BT\\Sources\\..."); use single quotes when the $ must stay literal. Ignore when expansion is intended.' },
+  { id: 'R5', severity: 'blocking', title: 'Start-Process 包装外部命令', titleEn: 'Start-Process wrapping an external command', blog: '§六', test: r5StartProcess,
+    fix: '-ArgumentList 不会自动加引号（路径含空格碎参数）；后台 Start-Process curl 下载会内容损坏。能直接调用就别包一层：`& curl.exe ...`。',
+    fixEn: '-ArgumentList does not quote automatically (paths with spaces break); background Start-Process curl downloads came out corrupted. Call `& curl.exe ...` directly instead of wrapping.' },
+  { id: 'R6', severity: 'blocking', title: 'Get-WindowsOptionalFeature 的 FeatureName 不支持数组', titleEn: 'Get-WindowsOptionalFeature -FeatureName does not take arrays', blog: '§七', test: r6FeatureNameArray,
+    fix: '`-FeatureName A, B` 报 Cannot convert System.Object[]；用 `foreach ($n in "A","B") { ... -FeatureName $n }`。',
+    fixEn: '`-FeatureName A, B` fails with Cannot convert System.Object[]; loop: `foreach ($n in "A","B") { ... -FeatureName $n }`.' },
+  { id: 'R7', severity: 'blocking', title: 'DISM 动词 /Dismount-Image 不存在', titleEn: 'DISM verb /Dismount-Image does not exist', blog: '§八', test: r7DismountImage,
+    fix: '正确动词是 `/Unmount-Image`，否则报 错误:87 且 wim 一直挂载占空间。',
+    fixEn: 'The correct verb is `/Unmount-Image`; /Dismount-Image errors (错误:87) and leaves the wim mounted.' },
+  { id: 'R8', severity: 'blocking', title: 'RestoreHealth 源版本可能比系统新', titleEn: 'RestoreHealth source may be newer than the current build', blog: '§九', test: r8RestoreHealthSource,
+    fix: '0x800f0915 = 修复源比当前系统新；源要求同版本或更旧，或走 Windows Update。',
+    fixEn: '0x800f0915 means the fix source is newer than the current system; use a source of the same or older build, or Windows Update.' },
+  { id: 'R9', severity: 'blocking', title: 'curl -L 与 -C - 组合可能拖慢 CDN 下载', titleEn: 'curl -L with -C - can slow CDN downloads', blog: '§十', test: r9CurlResume,
+    fix: '部分 CDN 上 `curl -L` 与 `-C -` 组合会拖慢速度；优先 HEAD 拿 Content-Length → 分段 `-r` 并行 → copy /b 合并。',
+    fixEn: 'On some CDNs `curl -L` combined with `-C -` is slow; prefer HEAD for Content-Length, parallel `-r` ranges, then copy /b merge.' },
+  { id: 'R10', severity: 'blocking', title: 'npm/npx/pnpm 不带 .cmd 后缀（npm.ps1 被 ExecutionPolicy 拦截）', titleEn: 'npm/npx/pnpm invoked without the .cmd suffix (npm.ps1 blocked by ExecutionPolicy)', blog: '§十一', test: r10NpmCmd,
+    fix: 'PowerShell 默认禁止运行脚本，PATH 里的 npm.ps1 加载报错（running scripts is disabled）；显式用 `npm.cmd run ...` / `npx.cmd ...` / `pnpm.cmd ...`。',
+    fixEn: 'PowerShell blocks script execution, so the npm.ps1 on PATH fails (running scripts is disabled); explicitly use `npm.cmd run ...` / `npx.cmd ...` / `pnpm.cmd ...`.' },
+  { id: 'R11', severity: 'blocking', title: 'PowerShell 5.1 没有 && / || 链式运算符', titleEn: 'PowerShell 5.1 has no && / || chain operators', blog: '§十二', test: r11NoAndOr,
+    fix: '`a && b` 在 PS 5.1 解析报错（PS 7+ 才支持）；改用 `a; b`、`if ($LASTEXITCODE -eq 0) { b }` 或分行执行。cmd/bash 内部除外。',
+    fixEn: '`a && b` is a parse error in PS 5.1 (PS 7+ only); use `a; b`, `if ($LASTEXITCODE -eq 0) { b }`, or separate lines. cmd/bash contexts are exempt.' },
 ]
 
 /** Run every rule against one command and return the matching rule objects. */
-export function run(cmd) {
+export function run(cmd: string): Rule[] {
   return RULES.filter((r) => r.test(cmd))
 }
 
-/**
- * Gate view: split matches into blocking (R2–R9) and advisory (R1) buckets.
- * The plugin denies on blocking violations; advisory-only commands pass.
- */
-export function check(cmd) {
+/** Gate view: split matches into blocking (R2–R11) and advisory (R1) buckets. */
+export function check(cmd: string): CheckResult {
   const all = run(cmd)
   return {
     blocking: all.filter((r) => r.severity === 'blocking'),
@@ -203,14 +233,14 @@ export function check(cmd) {
   }
 }
 
-/** One-line rendering of matched rules, used for deny reasons and CLI output. */
-export function formatHits(hits) {
-  return hits.map((r) => '  [' + r.id + '] ' + r.title + '（' + r.blog + '）' + NL + '      ' + r.fix).join('' + NL)
+/** Render matched rules in the requested language, for deny reasons and CLI output. */
+export function formatHits(hits: readonly Rule[], lang: Lang = 'zh'): string {
+  return hits.map((r) => '  [' + r.id + '] ' + (lang === 'en' ? r.titleEn : r.title) + '（' + r.blog + '）' + NL + '      ' + (lang === 'en' ? r.fixEn : r.fix)).join('' + NL)
 }
 
 /** Self-test battery; every case must match its expected rule ids. */
-export function selftest() {
-  const cases = [
+export function selftest(): number {
+  const cases: ReadonlyArray<{ label: string; cmd: string; expect: string[] }> = [
     { label: 'clean', cmd: 'Write-Output "hello"', expect: [] },
     { label: 'R2 var-colon', cmd: '"attempt $attempt: downloading..."', expect: ['R2'] },
     { label: 'R2 scope ok', cmd: 'Write-Output "$env:Path"', expect: [] },

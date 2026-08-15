@@ -1,0 +1,17 @@
+@chaggle/dsh-powershell-check
+Copyright (c) 2026 chaggle
+
+This package is an original work distributed under the MIT License (see LICENSE).
+It does not redistribute or adapt code from any upstream project.
+
+The pitfall rule set (R1-R11) is derived from the blog post
+'PowerShell 实战踩坑大全' (https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/),
+which records the author\'s own troubleshooting experience. The DeepSeek Harness
+(https://github.com/deepseek-ai/deepseek-harness) project is the extension host;
+no Harness source code is redistributed by this package.
+
+本包为原创作品，按 MIT License 分发（见 LICENSE），不再分发或改编任何上游项目代码。
+规则集（R1-R11）源自作者博客文章《PowerShell 实战踩坑大全》
+(https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/) 记录的实际排查经验；
+DeepSeek Harness（https://github.com/deepseek-ai/deepseek-harness）仅作为扩展宿主，本包不再分发其源码。
+

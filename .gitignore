@@ -1,3 +1,11 @@
-node_modules/
+node_modules
+# tsc intermediates: lib/index.js / lib/checker.js / lib/invariant.js and the
+# lib/types/**/*.d.ts declarations ARE tracked so github: installs do not
+# rebuild inside the harness workspace (mirrors the dsh-tianshu-tui standard).
+lib/types/**/*.js
+lib/types/**/*.js.map
+*.tgz
+coverage/
 *.log
+.DS_Store
 
