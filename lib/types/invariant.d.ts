@@ -8,6 +8,7 @@ import type { PluginConfig } from './index.ts';
 export interface NormalizedConfig {
     readonly mode: 'deny' | 'warn';
     readonly lang: Lang;
+    readonly analyzer: 'builtin' | 'psscriptanalyzer';
 }
 /** Validate and default the plugin config; throws on unknown values. */
 export declare function normalizeConfig(config: PluginConfig): NormalizedConfig;

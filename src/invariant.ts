@@ -10,12 +10,14 @@ import type { PluginConfig } from './index.ts'
 export interface NormalizedConfig {
   readonly mode: 'deny' | 'warn'
   readonly lang: Lang
+  readonly analyzer: 'builtin' | 'psscriptanalyzer'
 }
 
 /** Validate and default the plugin config; throws on unknown values. */
 export function normalizeConfig(config: PluginConfig): NormalizedConfig {
   const mode = config.mode === 'warn' ? 'warn' : 'deny'
   const lang: Lang = config.lang === 'en' ? 'en' : 'zh'
-  return { mode, lang }
+  const analyzer = config.analyzer === 'psscriptanalyzer' ? 'psscriptanalyzer' : 'builtin'
+  return { mode, lang, analyzer }
 }
 

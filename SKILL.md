@@ -56,6 +56,10 @@ Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 - **Verify downloads**: sample before full download; check magic bytes (MZ/PDF/7z) and byte size;
 - **Long tasks**: keep a log with Start-Transcript.
 
+### PSScriptAnalyzer deep check
+
+With the plugin configured as `analyzer: psscriptanalyzer`, every pwsh command is additionally deep-checked by the official PSScriptAnalyzer (Error/ParseError deny, warnings log). The module must be installed on the host (`Install-Module PSScriptAnalyzer -Scope CurrentUser -Force`); when missing the plugin degrades to the builtin rules.
+
 ### Maintenance
 
 - New pitfall: **add the rule to src/checker.ts RULES first** (with selftest cases), run `--selftest`, then mirror it in the blog post and this table — tool and knowledge base stay in sync;
@@ -112,6 +116,10 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 - **PS 字符串选型**：路径含 $ 或反斜杠时用单引号，不要用双引号；
 - **下载文件后校验**：先小样后大样，校验魔数（MZ/PDF/7z）与字节大小再使用；
 - **长任务**：用 Start-Transcript 留日志。
+
+### PSScriptAnalyzer 深度检查
+
+插件配置 `analyzer: psscriptanalyzer` 后，每条 pwsh 命令还会被官方 PSScriptAnalyzer 深检（Error/ParseError 拦截，Warning 记日志）。宿主机需安装模块（`Install-Module PSScriptAnalyzer -Scope CurrentUser -Force`）；缺失时自动回落内置规则。
 
 ### 维护约定
 

@@ -56,6 +56,7 @@ git clone https://github.com/chaggle/dsh-powershell-check.git "$HOME/.dsh/skills
 | --- | --- | --- |
 | `mode` | `deny` | `deny` blocks pwsh calls with blocking violations; `warn` logs and allows |
 | `lang` | `zh` | Language of deny reasons and warn logs: `zh` or `en` |
+| `analyzer` | `builtin` | `builtin`: bundled R1–R17 rules only. `psscriptanalyzer`: additionally deep-checks every pwsh command with the official PSScriptAnalyzer (install the module on the host; degrades to builtin when missing). Error/ParseError findings deny, warnings are logged |
 
 ## CLI
 
@@ -88,6 +89,17 @@ Exit codes: 0 = PASS, 1 = FAIL (violations listed with fixes), 2 = usage error.
 | R15 | advisory | PS 7+ only syntax (`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`) | §16 |
 | R16 | advisory | cmd-style commands / `%VAR%` env syntax | §17 |
 | R17 | advisory | `Write-Host` output bypasses the pipeline | §18 |
+
+## PSScriptAnalyzer deep check
+
+Set `analyzer: psscriptanalyzer` to add the official PowerShell static analyzer on top of the builtin rules. The plugin runs `Invoke-ScriptAnalyzer` against the command text (as a temp .ps1) through the same `ctx.shell` seam the harness hooks bridges use; the probe raises the process-scope execution policy to Bypass first (the harness starts pwsh under Restricted). Findings with severity Error/ParseError deny the call with the analyzer messages; warnings are logged and allowed.
+
+```powershell
+# one-time, on the host (PowerShell 5.1 or 7):
+Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+```
+
+Trade-offs: each deep check spawns an analyzer pass (module load ~1–3 s), so enable it only when the extra coverage is worth the latency; when the module is absent the plugin logs once and falls back to the builtin rules. Empirical notes from this project: PSSA does not flag `&&`/`||` on a 5.1 host (the builtin R11 covers that) and serializes Severity as a numeric enum (the parser handles both forms).
 
 ## How it works (official extension points)
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-08-15
+
+- **PSScriptAnalyzer 深度检查**：新增 `analyzer: psscriptanalyzer` 配置——经官方 `ctx.shell` seam（hooks 桥同款）对每条 pwsh 命令跑 `Invoke-ScriptAnalyzer`（临时 .ps1 + BOM，进程级 ExecutionPolicy Bypass 兼容 harness 沙箱）；Error/ParseError 拦截并附分析器消息，Warning 记日志放行；模块缺失自动降级内置规则；
+- **实测适配**（PowerShell 5.1 + PSSA 1.25.0）：Severity 序列化为数字枚举（0/1/2/3），解析器两种形态兼容；PSSA 不报 `&&`/`||`（内置 R11 兜底）；
+- 新增 `@deepseek-ai/dsh-shell` peer/dev 依赖；vitest 24 例（新增 pssa.spec 11 例）、selftest 51 例全绿；
+- **PSScriptAnalyzer deep check**: optional `analyzer: psscriptanalyzer` gate pass through `ctx.shell`; Error/ParseError deny, warnings log, missing-module degrade; verified on PS 5.1 + PSSA 1.25 (numeric severity enum handled).
+
+
 ## 0.4.0 — 2026-08-15
 
 - **新增 AI 生成脚本规则 R12–R17**（调研 GitHub/网页同类插件后沉淀）：R12 `ConvertTo-Json` 缺 `-Depth` 截断（PowerShell #5604 系列）、R13 `foreach` 内误用 `$_`、R14 `if/while` 单等号当比较、R15 PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`）、R16 cmd 风格命令与 `%VAR%` 语法（对照 opencode windows-shell-reliability）、R17 `Write-Host` 输出不进管道；

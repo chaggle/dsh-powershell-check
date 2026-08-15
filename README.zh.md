@@ -56,6 +56,7 @@ git clone https://github.com/chaggle/dsh-powershell-check.git "$HOME/.dsh/skills
 | --- | --- | --- |
 | `mode` | `deny` | `deny` 命中阻断级坑位直接拒绝；`warn` 只记日志放行 |
 | `lang` | `zh` | deny reason 与日志语言：`zh` 或 `en` |
+| `analyzer` | `builtin` | `builtin`：仅内置 R1–R17；`psscriptanalyzer`：额外用官方 PSScriptAnalyzer 对每条 pwsh 命令深检（宿主机需安装模块，缺模块自动降级内置）。Error/ParseError 拦截，Warning 记日志放行 |
 
 ## CLI
 
@@ -88,6 +89,17 @@ node scripts/check-pwsh.mjs --selftest
 | R15 | 建议 | PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`） | 十六 |
 | R16 | 建议 | cmd 风格命令 / `%VAR%` 环境变量语法 | 十七 |
 | R17 | 建议 | `Write-Host` 输出不进管道 | 十八 |
+
+## PSScriptAnalyzer 深度检查
+
+配置 `analyzer: psscriptanalyzer` 可在内置规则之上叠加官方 PowerShell 静态分析器。插件把命令文本写入临时 .ps1，经 harness hooks 桥同款的 `ctx.shell` 通道执行 `Invoke-ScriptAnalyzer`；探针先提升进程级执行策略为 Bypass（harness 默认 Restricted 启动 pwsh）。命中 Error/ParseError 级别 → 拒绝并附分析器消息；Warning → 记日志放行。
+
+```powershell
+# 宿主机一次性安装（PowerShell 5.1 或 7）：
+Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+```
+
+权衡：每次深检都会起一个分析进程（模块加载约 1–3 秒），仅在需要更全覆盖时开启；模块缺失时插件记录一次日志并回落内置规则。实测备注：PSSA 在 5.1 宿主上不报 `&&`/`||`（由内置 R11 兜底），且 Severity 序列化为数字枚举（解析器两种形态都兼容）。
 
 ## 工作原理（官方扩展点）
 
