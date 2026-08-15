@@ -25,7 +25,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 退出码：0 = PASS；1 = FAIL（见输出清单）；2 = 用法错误或空输入。
 
-## 内置规则（R1–R9，与博客章节一一对应）
+## 内置规则（R1–R11，与博客章节一一对应）
 
 | 规则 | 级别 | 检测内容 | 修复 | 博客章节 |
 | --- | --- | --- | --- | --- |
@@ -38,6 +38,8 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 | R7 | 阻断 | 出现 /Dismount-Image 动词 | 用 /Unmount-Image | 八、DISM 动词 |
 | R8 | 阻断 | RestoreHealth 与 /Source 同现 | 源版本须不高于当前系统，否则走 Windows Update | 九、源版本 |
 | R9 | 阻断 | curl 同时带 -L 与 -C - | 分段 -r 并行下载更快 | 十、CDN 加速 |
+| R10 | 阻断 | npm/npx/pnpm 不带 .cmd 后缀 | 显式用 npm.cmd / npx.cmd / pnpm.cmd（npm.ps1 被 ExecutionPolicy 拦截） | 十一、ExecutionPolicy |
+| R11 | 阻断 | PS 5.1 出现 && / || 链式运算符 | 改分号或 if ($LASTEXITCODE -eq 0)；cmd/bash 内部除外 | 十二、链式运算符 |
 
 ## 生成 .ps1 的写作规则（检查器覆盖不到的写作侧）
 

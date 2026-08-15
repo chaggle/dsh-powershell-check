@@ -12,7 +12,7 @@
 'use strict'
 
 import fs from 'node:fs'
-import { run, formatHits, selftest } from '../../checker.js'
+import { run, formatHits, selftest } from '../checker.js'
 
 function main() {
   const args = process.argv.slice(2)

@@ -11,10 +11,10 @@
     "./checker": "./checker.js",
     "./package.json": "./package.json"
   },
-  "files": ["index.js", "checker.js", "assets"],
+  "files": ["index.js", "checker.js", "SKILL.md", "scripts"],
   "engines": { "node": ">=18" },
   "scripts": {
-    "selftest": "node assets/scripts/check-pwsh.mjs --selftest",
+    "selftest": "node scripts/check-pwsh.mjs --selftest",
     "smoke": "node test/smoke.mjs"
   }
 }

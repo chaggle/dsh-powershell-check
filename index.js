@@ -21,8 +21,8 @@ export const name = 'dsh-powershell-check'
 export const inject = ['skills']
 
 const PROVIDER_NAME = 'dsh-powershell-check'
-const SKILL_BODY_URL = new URL('./assets/SKILL.md', import.meta.url)
-const RESOURCE_BASE = { kind: 'directory', path: fileURLToPath(new URL('./assets/', import.meta.url)) }
+const SKILL_BODY_URL = new URL('./SKILL.md', import.meta.url)
+const RESOURCE_BASE = { kind: 'directory', path: fileURLToPath(new URL('./', import.meta.url)) }
 const DESCRIPTION = 'Use before executing any PowerShell command or script — pwsh tool calls, generated .ps1 files, or PowerShell embedded in templates — to statically check it against the ten documented PowerShell pitfalls from the blog post "PowerShell 实战踩坑大全" and fix every flagged violation first.'
 const CANDIDATE = {
   name: 'powershell-check',

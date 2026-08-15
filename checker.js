@@ -118,6 +118,46 @@ function r9CurlResume(cmd) {
   }
   return false
 }
+// R10: npm/npx/pnpm invoked without the .cmd suffix — PowerShell blocks
+// npm.ps1 (running scripts is disabled / ExecutionPolicy) while npm.cmd runs.
+function r10NpmCmd(cmd) {
+  const names = ['npm', 'npx', 'pnpm']
+  const allowedBefore = ' ;|&' + String.fromCharCode(9)
+  for (const name of names) {
+    for (let i = 0; i < cmd.length; i++) {
+      const prev = i > 0 ? cmd[i - 1] : ''
+      if (prev !== '' && allowedBefore.indexOf(prev) < 0) continue
+      if (cmd.slice(i, i + name.length).toLowerCase() !== name) continue
+      const after = i + name.length < cmd.length ? cmd[i + name.length] : ''
+      if (after === '.') continue
+      if (after !== '' && after !== ' ' && after !== '"' && after !== '\'' && after !== '\t') continue
+      return true
+    }
+  }
+  return false
+}
+// R11: && / || chain operators do not exist in Windows PowerShell 5.1 (PS 7+ only).
+function r11NoAndOr(cmd) {
+  const lines = cmd.split('\n')
+  for (const ln of lines) {
+    // cmd.exe / bash contexts have their own valid && / || — skip those lines
+    if (hasWord(ln, 'bash') || hasWord(ln, 'zsh') || hasWord(ln, 'sh')) continue
+    const low = ln.toLowerCase()
+    if (low.includes('cmd /c') || low.includes('cmd.exe /c')) continue
+    let q = null
+    for (let i = 0; i < ln.length - 1; i++) {
+      const ch = ln[i]
+      if (ch === '"' || ch === '\'') {
+        if (q === null) q = ch
+        else if (q === ch && ln[i - 1] !== '`') q = null
+        continue
+      }
+      if (q !== null) continue
+      if ((ch === '&' && ln[i + 1] === '&') || (ch === '|' && ln[i + 1] === '|')) return true
+    }
+  }
+  return false
+}
 
 /**【power 坑位规则表：R1 建议级，R2–R9 阻断级】**/
 export const RULES = [
@@ -139,6 +179,10 @@ export const RULES = [
     fix: '0x800f0915 = 修复源比当前系统新；源要求同版本或更旧，或走 Windows Update。' },
   { id: 'R9', severity: 'blocking', title: 'curl -L 与 -C - 组合可能拖慢 CDN 下载', blog: '§十', test: r9CurlResume,
     fix: '部分 CDN 上 `curl -L` 与 `-C -` 组合会拖慢速度；优先 HEAD 拿 Content-Length → 分段 `-r` 并行 → copy /b 合并。' },
+  { id: 'R10', severity: 'blocking', title: 'npm/npx/pnpm 不带 .cmd 后缀（npm.ps1 被 ExecutionPolicy 拦截）', blog: '§十一', test: r10NpmCmd,
+    fix: 'PowerShell 默认禁止运行脚本，PATH 里的 npm.ps1 加载报错（running scripts is disabled）；显式用 `npm.cmd run ...` / `npx.cmd ...` / `pnpm.cmd ...`。' },
+  { id: 'R11', severity: 'blocking', title: 'PowerShell 5.1 没有 && / || 链式运算符', blog: '§十二', test: r11NoAndOr,
+    fix: '`a && b` 在 PS 5.1 解析报错（PS 7+ 才支持）；改用 `a; b`、`if ($LASTEXITCODE -eq 0) { b }` 或分行执行。cmd/bash 内部除外。' },
 ]
 
 /** Run every rule against one command and return the matching rule objects. */
@@ -185,6 +229,17 @@ export function selftest() {
     { label: 'R8 restorehealth', cmd: 'dism /Online /Cleanup-Image /RestoreHealth /Source:WIM:install.wim:1', expect: ['R1', 'R8'] },
     { label: 'R9 curl resume', cmd: 'curl -L -C - -o x.iso https://cd.example/x.iso', expect: ['R9'] },
     { label: 'R9 plain ok', cmd: 'curl -o x.iso https://cd.example/x.iso', expect: [] },
+    { label: 'R10 npm bare', cmd: 'npm run build', expect: ['R10'] },
+    { label: 'R10 npm.cmd ok', cmd: 'npm.cmd run build', expect: [] },
+    { label: 'R10 npx bare', cmd: 'npx hexo version', expect: ['R10'] },
+    { label: 'R10 pnpm bare', cmd: 'pnpm run publish', expect: ['R10'] },
+    { label: 'R10 variable ok', cmd: 'Write-Output $npmConfig', expect: [] },
+    { label: 'R10 uppercase ok', cmd: 'NPM.CMD run build', expect: [] },
+    { label: 'R11 and-or', cmd: 'git commit && git push', expect: ['R11'] },
+    { label: 'R11 semicolon ok', cmd: 'git commit; git push', expect: [] },
+    { label: 'R11 cmd-skip ok', cmd: 'cmd /c copy /b a+b+c out && del a', expect: [] },
+    { label: 'R11 string ok', cmd: 'Write-Output "a && b"', expect: [] },
+    { label: 'R11 pipe ok', cmd: 'git diff | Select-String x', expect: [] },
     { label: 'R1 gbk', cmd: 'wsl --status', expect: ['R1'] },
     { label: 'R1 fixed', cmd: 'chcp 65001 | Out-Null; wsl --status', expect: [] },
   ]
