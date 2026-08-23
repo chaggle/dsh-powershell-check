@@ -10,7 +10,7 @@
 - **内置技能**：通过 `ctx.skills.registerProvider`（官方 `dsh-skill-badge` 同款写法）暴露 `powershell-check`，每个会话目录可见、可加载；
 - **中英双语**：规则文本、CLI 输出（`--lang en|zh`）、deny reason 与文档均提供中英版本；
 - **单一规则源**：规则引擎（`src/checker.ts`）被门禁与 CLI 共用，改一处全生效；
-- **自检**：`--selftest` 内置 51 组正反例（R1–R17，聚焦 AI 生成脚本）。
+- **自检**：`--selftest` 内置 60 组正反例（R1–R19，聚焦 AI 生成脚本）。
 
 ## 安装
 
@@ -56,7 +56,7 @@ git clone https://github.com/chaggle/dsh-powershell-check.git "$HOME/.dsh/skills
 | --- | --- | --- |
 | `mode` | `deny` | `deny` 命中阻断级坑位直接拒绝；`warn` 只记日志放行 |
 | `lang` | `zh` | deny reason 与日志语言：`zh` 或 `en` |
-| `analyzer` | `builtin` | `builtin`：仅内置 R1–R17；`psscriptanalyzer`：额外用官方 PSScriptAnalyzer 对每条 pwsh 命令深检（宿主机需安装模块，缺模块自动降级内置）。Error/ParseError 拦截，Warning 记日志放行 |
+| `analyzer` | `builtin` | `builtin`：仅内置 R1–R19；`psscriptanalyzer`：额外用官方 PSScriptAnalyzer 对每条 pwsh 命令深检（宿主机需安装模块，缺模块自动降级内置）。Error/ParseError 拦截，Warning 记日志放行 |
 
 ## CLI
 
@@ -89,6 +89,8 @@ node scripts/check-pwsh.mjs --selftest
 | R15 | 建议 | PS 7+ 专属语法（`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`） | 1-5 |
 | R16 | 建议 | cmd 风格命令 / `%VAR%` 环境变量语法 | 3-3 |
 | R17 | 建议 | `Write-Host` 输出不进管道 | 2-4 |
+| R18 | 建议 | 检查文本出现乱码特征（PS 5.1 把无 BOM 的 UTF-8 .ps1 按 ANSI/GBK 解析） | 2-5 |
+| R19 | 建议 | `Remove-Item` 位置参数传文件系统对象（无 `-Path`/`-LiteralPath`/`.FullName`） | 5-3 |
 
 ## PSScriptAnalyzer 深度检查
 

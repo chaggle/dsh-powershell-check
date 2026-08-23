@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2 — 2026-08-24
+
+- **新增 R18 / R19**（博客文章新增 2-5、5-3 两节，源自 Frosti 迁移实战）：
+  - R18 `.ps1 文件编码`：PS 5.1 把无 BOM 的 UTF-8 .ps1 按 ANSI(GBK) 解析，中文变乱码、引号失衡直接 ParserError（本次 deploy-blog.ps1 实战翻车点）；检测输入文本中的 UTF-8→GBK 乱码特征字符（含 `锟斤拷`、U+FFFD）；
+  - R19 `Remove-Item 对象解析`：PS 5.1 把位置参数传入的文件系统对象经 ToString() 转成 -Path，DirectoryInfo 只返回目录名、相对当前目录解析 → `Cannot find path '<cwd>\<name>'`；修复 `-Path $items.FullName` 或管道；
+  - 两条均为建议级（advisory）；selftest 60 例全绿、vitest 24 例全绿；README/SKILL 双语规则表与章节引用同步（R18→§2-5、R19→§5-3）；
+- **New rules R18/R19** from Frosti migration battle reports: BOM-less UTF-8 .ps1 misdecoded as ANSI/GBK on PS 5.1 (ParserError from unbalanced quotes), and Remove-Item resolving positional FileSystemInfo objects against the CWD; selftest now 60 cases, all green.
+
 ## 0.5.1 — 2026-08-15
 
 - **博客文章重组**：18 个坑位按主题重排为五组（① 语法与解析 ② 字符串/转义/输出 ③ 外部命令与进程 ④ Windows 组件与 DISM ⑤ 数据与迭代），小节编号 x-y 并标注 R 编号，文末新增规则总表；

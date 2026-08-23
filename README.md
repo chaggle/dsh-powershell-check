@@ -10,7 +10,7 @@ Installable as a profile plugin: `dsh plugin --profile <name> add @chaggle/dsh-p
 - **Bundled skill** — exposes `powershell-check` through `ctx.skills.registerProvider` (the `dsh-skill-badge` pattern), visible and loadable in every session catalog.
 - **Bilingual** — rule text, CLI output (`--lang en|zh`), deny reasons, and docs ship in English and Simplified Chinese.
 - **Single rule source** — the rules engine (`src/checker.ts`) is shared by the gate and the CLI; update once, both follow.
-- **Self-test** — `--selftest` runs a 51-case positive/negative battery (R1–R17, AI-generated-script focused).
+- **Self-test** — `--selftest` runs a 60-case positive/negative battery (R1–R19, AI-generated-script focused).
 
 ## Install
 
@@ -56,7 +56,7 @@ git clone https://github.com/chaggle/dsh-powershell-check.git "$HOME/.dsh/skills
 | --- | --- | --- |
 | `mode` | `deny` | `deny` blocks pwsh calls with blocking violations; `warn` logs and allows |
 | `lang` | `zh` | Language of deny reasons and warn logs: `zh` or `en` |
-| `analyzer` | `builtin` | `builtin`: bundled R1–R17 rules only. `psscriptanalyzer`: additionally deep-checks every pwsh command with the official PSScriptAnalyzer (install the module on the host; degrades to builtin when missing). Error/ParseError findings deny, warnings are logged |
+| `analyzer` | `builtin` | `builtin`: bundled R1–R19 rules only. `psscriptanalyzer`: additionally deep-checks every pwsh command with the official PSScriptAnalyzer (install the module on the host; degrades to builtin when missing). Error/ParseError findings deny, warnings are logged |
 
 ## CLI
 
@@ -89,6 +89,8 @@ Exit codes: 0 = PASS, 1 = FAIL (violations listed with fixes), 2 = usage error.
 | R15 | advisory | PS 7+ only syntax (`-AsHashtable`/`-Parallel`/`-AsByteStream`/`??`/`?.`) | §1-5 |
 | R16 | advisory | cmd-style commands / `%VAR%` env syntax | §1-2-3 |
 | R17 | advisory | `Write-Host` output bypasses the pipeline | §1-1-4 |
+| R18 | advisory | mojibake artifacts in the checked text (UTF-8 .ps1 read as ANSI/GBK on PS 5.1) | §2-5 |
+| R19 | advisory | `Remove-Item` with a positional FileSystemInfo object (no `-Path`/`-LiteralPath`/`.FullName`) | §5-3 |
 
 ## PSScriptAnalyzer deep check
 

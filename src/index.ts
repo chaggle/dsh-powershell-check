@@ -32,7 +32,7 @@ export interface PluginConfig {
   /** Language for deny reasons and warn logs. */
   readonly lang?: Lang
   /**
-   * builtin (default): the bundled R1-R17 static rules only.
+   * builtin (default): the bundled R1-R19 static rules only.
    * psscriptanalyzer: additionally deep-checks every pwsh command with the
    * official PSScriptAnalyzer (needs the module on the host; degrades to
    * builtin when missing). ParseError/Error findings deny, warnings log.

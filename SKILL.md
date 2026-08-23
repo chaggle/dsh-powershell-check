@@ -27,7 +27,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 
-### Rules (R1–R17, mapped to the blog sections)
+### Rules (R1–R19, mapped to the blog sections)
 
 | Rule | Level | Detects | Fix | Blog |
 | --- | --- | --- | --- | --- |
@@ -48,6 +48,8 @@ Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 | R15 | advisory | PS 7+ only syntax (`-AsHashtable`, `-Parallel`, `-AsByteStream`, `??`, `?.`) | confirm the runtime or use 5.1 equivalents | 1-5. PS7-only syntax |
 | R16 | advisory | cmd-style commands / `%VAR%` env syntax | use Remove-Item / Copy-Item / Move-Item / New-Item and `$env:VAR` | 3-3. cmd style |
 | R17 | advisory | Write-Host output bypasses the pipeline | use Write-Output for capturable results | 2-4. Write-Host |
+| R18 | advisory | mojibake artifacts in the checked text (UTF-8 .ps1 read as ANSI/GBK on PS 5.1) | save .ps1 files with Chinese as UTF-8 with BOM; read/check with `-Encoding UTF8` | 2-5. .ps1 encoding |
+| R19 | advisory | `Remove-Item` with a positional FileSystemInfo object (no `-Path`/`-LiteralPath`/`.FullName`) | pass `-Path $items.FullName`, or pipe the items | 5-3. Remove-Item objects |
 
 ### Writing rules for generated .ps1 (not covered by the checker)
 
@@ -88,7 +90,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 退出码：0 = PASS；1 = FAIL（输出清单含修复）；2 = 用法错误或空输入。
 
-### 内置规则（R1–R17，与博客章节一一对应）
+### 内置规则（R1–R19，与博客章节一一对应）
 
 | 规则 | 级别 | 检测内容 | 修复 | 博客章节 |
 | --- | --- | --- | --- | --- |
@@ -109,6 +111,8 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 | R15 | 建议 | PS 7+ 专属语法（-AsHashtable/-Parallel/-AsByteStream/??/?.) | 确认运行环境或用 5.1 等价写法 | 1-5、PS7+ 语法 |
 | R16 | 建议 | cmd 风格命令/%VAR% 环境变量语法 | 用 Remove-Item/Copy-Item/Move-Item/New-Item 与 $env:VAR | 3-3、cmd 风格 |
 | R17 | 建议 | Write-Host 输出不进管道 | 需捕获结果用 Write-Output | 2-4、Write-Host |
+| R18 | 建议 | 检查文本出现乱码特征（UTF-8 无 BOM 的 .ps1 被 PS 5.1 按 ANSI/GBK 解析） | 含中文的 .ps1 保存为 UTF-8 with BOM；读取/检查用 -Encoding UTF8 | 2-5、.ps1 编码 |
+| R19 | 建议 | Remove-Item 位置参数传文件系统对象（无 -Path/-LiteralPath/.FullName） | 用 -Path $items.FullName 传完整路径，或管道传入 | 5-3、Remove-Item 对象 |
 
 ### 生成 .ps1 的写作规则（检查器覆盖不到的写作侧）
 

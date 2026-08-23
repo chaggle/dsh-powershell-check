@@ -266,6 +266,32 @@ function r16CmdStyle(cmd: string): boolean {
 function r17WriteHost(cmd: string): boolean {
   return hasWord(cmd, 'Write-Host')
 }
+// R18: a UTF-8 .ps1 file saved WITHOUT BOM is decoded as ANSI (GBK) by Windows
+// PowerShell 5.1 — Chinese literals become mojibake and quotes can unbalance into
+// a ParserError. The checker only sees already-decoded text, so it flags the
+// classic UTF-8-read-as-GBK artifact characters (and U+FFFD / the 锟斤拷 marker).
+const MOJIBAKE_RE = /[涓閿鍗鏋寤閮氬鍒绉戠殑鍦浘锟鈥斺撯]/
+function r18Ps1Encoding(cmd: string): boolean {
+  if (cmd.includes('\uFFFD') || cmd.includes('锟斤拷')) return true
+  return MOJIBAKE_RE.test(cmd)
+}
+// R19: Remove-Item receives FileSystemInfo objects positionally; PS 5.1 converts
+// them to -Path via ToString(), and a DirectoryInfo yields only its bare name,
+// resolved against the CURRENT location — not the item's real parent.
+// Symptom: Cannot find path '<cwd>\<name>'.
+function r19RemoveItemObject(cmd: string): boolean {
+  const lines = cmd.split('\n')
+  for (const ln of lines) {
+    const low = ln.toLowerCase()
+    if (!low.includes('remove-item')) continue
+    if (low.includes('-literalpath') || low.includes('-path')) continue
+    if (low.includes('.fullname')) continue
+    const sep = Math.max(ln.lastIndexOf('|'), ln.lastIndexOf(';'))
+    const seg = ln.slice(sep + 1)
+    if (/\$[A-Za-z_][A-Za-z0-9_]*/.test(seg)) return true
+  }
+  return false
+}
 
 /** Pitfall rules: R1/R12/R13/R15/R16/R17 advisory, the rest blocking. */
 export const RULES: readonly Rule[] = [
@@ -320,6 +346,12 @@ export const RULES: readonly Rule[] = [
   { id: 'R17', severity: 'advisory', title: 'Write-Host 输出不进管道（AI 常用来「打印」结果）', titleEn: 'Write-Host output bypasses the pipeline (AI often prints results with it)', blog: '§2-4', test: r17WriteHost,
     fix: '`Write-Host` 只写控制台，下游 `|` 捕获不到；需要输出/捕获结果用 `Write-Output`（或直接表达式）。进度提示才用 Write-Host。',
     fixEn: '`Write-Host` writes only to the console; downstream `|` cannot capture it. Use `Write-Output` (or a bare expression) when the result must be captured; Write-Host is only for progress display.' },
+  { id: 'R18', severity: 'advisory', title: '.ps1 文件中文乱码：UTF-8 无 BOM（PS 5.1 按 ANSI 解析）', titleEn: 'Garbled Chinese in .ps1: UTF-8 without BOM (PS 5.1 decodes as ANSI)', blog: '§2-5', test: r18Ps1Encoding,
+    fix: 'Windows PowerShell 5.1 对无 BOM 的 UTF-8 .ps1 按 ANSI(GBK) 解析：中文变乱码、引号可能失衡导致 ParserError。含中文的 .ps1 必须保存为 UTF-8 with BOM（或用 `Get-Content -Encoding UTF8` 读取检查）。',
+    fixEn: 'Windows PowerShell 5.1 reads a BOM-less UTF-8 .ps1 as ANSI(GBK): Chinese literals turn to mojibake and quotes can unbalance into a ParserError. Save .ps1 files with Chinese as UTF-8 with BOM (or read/check them with `-Encoding UTF8`).' },
+  { id: 'R19', severity: 'advisory', title: 'Remove-Item 传文件系统对象按当前目录解析', titleEn: 'Remove-Item resolves FileSystemInfo objects against the current directory', blog: '§5-3', test: r19RemoveItemObject,
+    fix: 'PS 5.1 把位置参数传入的文件系统对象经 ToString() 转成 -Path：DirectoryInfo 只返回目录名，会相对当前目录解析 → `Cannot find path`。用 `-Path $items.FullName` 传完整路径，或改用管道 `| Remove-Item`。',
+    fixEn: 'PS 5.1 converts positional FileSystemInfo arguments to -Path via ToString(); a DirectoryInfo yields only its bare name, resolved against the CWD → `Cannot find path`. Pass `-Path $items.FullName`, or pipe the items into Remove-Item.' },
 ]
 
 /** Run every rule against one command and return the matching rule objects. */
@@ -396,6 +428,15 @@ export function selftest(): number {
     { label: 'R17 write-output ok', cmd: 'Write-Output "done"', expect: [] },
     { label: 'R1 gbk', cmd: 'wsl --status', expect: ['R1'] },
     { label: 'R1 fixed', cmd: 'chcp 65001 | Out-Null; wsl --status', expect: [] },
+    { label: 'R18 mojibake marker', cmd: '锟斤拷', expect: ['R18'] },
+    { label: 'R18 mojibake from gbk misread', cmd: "'涓€閿瀯寤哄苟閮ㄧ讲鍗氬鍒?chaggle'", expect: ['R18'] },
+    { label: 'R18 ufffd', cmd: 'Write-Output "\uFFFD"', expect: ['R18'] },
+    { label: 'R18 clean chinese ok', cmd: 'Write-Output "构建成功"', expect: [] },
+    { label: 'R19 remove-item object', cmd: 'if ($items) { Remove-Item -Recurse -Force $items }', expect: ['R19'] },
+    { label: 'R19 remove-item var', cmd: 'Remove-Item -Recurse -Force $objs', expect: ['R19'] },
+    { label: 'R19 fullname ok', cmd: 'Remove-Item -Recurse -Force -Path $items.FullName', expect: [] },
+    { label: 'R19 pipe ok', cmd: 'Get-ChildItem $target -Force | Remove-Item -Recurse -Force', expect: [] },
+    { label: 'R19 literalpath ok', cmd: 'Remove-Item -LiteralPath $p -Recurse -Force', expect: [] },
   ]
   let failures = 0
   for (const c of cases) {

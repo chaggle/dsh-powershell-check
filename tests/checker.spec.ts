@@ -33,6 +33,15 @@ const CASES: ReadonlyArray<{ label: string; cmd: string; expect: string[] }> = [
   { label: 'R11 pipe ok', cmd: 'git diff | Select-String x', expect: [] },
   { label: 'R1 gbk', cmd: 'wsl --status', expect: ['R1'] },
   { label: 'R1 fixed', cmd: 'chcp 65001 | Out-Null; wsl --status', expect: [] },
+  { label: 'R18 mojibake marker', cmd: '锟斤拷', expect: ['R18'] },
+  { label: 'R18 mojibake from gbk misread', cmd: "'涓€閿瀯寤哄苟閮ㄧ讲鍗氬鍒?chaggle'", expect: ['R18'] },
+  { label: 'R18 ufffd', cmd: 'Write-Output "\uFFFD"', expect: ['R18'] },
+  { label: 'R18 clean chinese ok', cmd: 'Write-Output "构建成功"', expect: [] },
+  { label: 'R19 remove-item object', cmd: 'if ($items) { Remove-Item -Recurse -Force $items }', expect: ['R19'] },
+  { label: 'R19 remove-item var', cmd: 'Remove-Item -Recurse -Force $objs', expect: ['R19'] },
+  { label: 'R19 fullname ok', cmd: 'Remove-Item -Recurse -Force -Path $items.FullName', expect: [] },
+  { label: 'R19 pipe ok', cmd: 'Get-ChildItem $target -Force | Remove-Item -Recurse -Force', expect: [] },
+  { label: 'R19 literalpath ok', cmd: 'Remove-Item -LiteralPath $p -Recurse -Force', expect: [] },
 ]
 
 describe('checker rules battery', () => {
