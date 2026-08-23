@@ -2,7 +2,7 @@
  * Static pitfall rules engine for PowerShell commands.
  *
  * Rules distilled from the blog post 'PowerShell 实战踩坑大全'
- * (https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/).
+ * (https://chaggle.github.io/blog/2026/08/14/powershell-pitfalls/).
  * Shared by the cordis plugin (src/index.ts) and the CLI (scripts/check-pwsh.mjs).
  * Compiled by tsc + tsdown into lib/ (see tsdown.config.ts).
  */

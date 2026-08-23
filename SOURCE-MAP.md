@@ -2,7 +2,7 @@
 
 This package is an original work: every file in `src/` is `new` — there is no
 upstream port and therefore no per-file mapping. The rule set derives from the
-blog post [PowerShell 实战踩坑大全](https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/)
+blog post [PowerShell 实战踩坑大全](https://chaggle.github.io/blog/2026/08/14/powershell-pitfalls/)
 and from the DeepSeek Harness extension-point documentation (`tools/pre-execute`,
 `ctx.skills.registerProvider`), both cited in NOTICE.
 

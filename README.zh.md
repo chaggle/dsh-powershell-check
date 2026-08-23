@@ -1,6 +1,6 @@
 # @chaggle/dsh-powershell-check
 
-一个原生 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件：通过官方 `tools/pre-execute` 拦截点**自动拦截带 PowerShell 坑位的 `pwsh` 工具调用**，并内置 `powershell-check` 技能。坑位规则来自博客《[PowerShell 实战踩坑大全](https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/)》（GBK 乱码、`$var:` 解析、PS 5.1 三元运算符、双引号变量展开、JS 转义、Start-Process 引号与沙箱坑、`-FeatureName` 数组、DISM 动词、`RestoreHealth` 源版本、CDN 下载、`npm.cmd` 后缀、`&&`/`||` 链式）。
+一个原生 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件：通过官方 `tools/pre-execute` 拦截点**自动拦截带 PowerShell 坑位的 `pwsh` 工具调用**，并内置 `powershell-check` 技能。坑位规则来自博客《[PowerShell 实战踩坑大全](https://chaggle.github.io/blog/2026/08/14/powershell-pitfalls/)》（GBK 乱码、`$var:` 解析、PS 5.1 三元运算符、双引号变量展开、JS 转义、Start-Process 引号与沙箱坑、`-FeatureName` 数组、DISM 动词、`RestoreHealth` 源版本、CDN 下载、`npm.cmd` 后缀、`&&`/`||` 链式）。
 
 可作 profile 插件安装：`dsh plugin --profile <名称> add @chaggle/dsh-powershell-check`（或直接挂行，见[安装](#安装)）。
 

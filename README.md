@@ -1,6 +1,6 @@
 # @chaggle/dsh-powershell-check
 
-A native [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin that **gates every `pwsh` tool call** against the PowerShell pitfalls documented in the blog post [PowerShell 实战踩坑大全](https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/) (GBK console mojibake, `$var:` parsing, PS 5.1 ternary, double-quoted variable expansion, JS escaping, Start-Process quoting and sandbox traps, `-FeatureName` arrays, DISM verbs, `RestoreHealth` source versions, CDN downloads, `npm.cmd` suffix, `&&`/`||` chains), and bundles the `powershell-check` skill.
+A native [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin that **gates every `pwsh` tool call** against the PowerShell pitfalls documented in the blog post [PowerShell 实战踩坑大全](https://chaggle.github.io/blog/2026/08/14/powershell-pitfalls/) (GBK console mojibake, `$var:` parsing, PS 5.1 ternary, double-quoted variable expansion, JS escaping, Start-Process quoting and sandbox traps, `-FeatureName` arrays, DISM verbs, `RestoreHealth` source versions, CDN downloads, `npm.cmd` suffix, `&&`/`||` chains), and bundles the `powershell-check` skill.
 
 Installable as a profile plugin: `dsh plugin --profile <name> add @chaggle/dsh-powershell-check` (or mount the row directly — see [Install](#install)).
 

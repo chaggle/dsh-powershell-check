@@ -133,6 +133,6 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 ### 参考 / References
 
 - 插件仓库 / Repository: https://github.com/chaggle/dsh-powershell-check
-- 博客原文 / Blog post: https://chaggle.github.io/2026/08/14/powershell/powershell-pitfalls/
+- 博客原文 / Blog post: https://chaggle.github.io/blog/2026/08/14/powershell-pitfalls/
 - 关联文章 / Related post: https://chaggle.github.io/2026/08/14/windows/wsl2-restore-on-stripped-windows/
 

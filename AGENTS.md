@@ -5,7 +5,7 @@ Working rules for agents editing this repository.
 ## Source of truth
 
 - `src/checker.ts` is the single rules engine; the plugin gate and the CLI both use it.
-- The rule set mirrors the blog post 《PowerShell 实战踩坑大全》 (source: chaggle/blog, source/_posts/powershell/powershell-pitfalls.md). Rule ids, blog sections, and the SKILL.md tables must stay in one-to-one correspondence.
+- The rule set mirrors the blog post 《PowerShell 实战踩坑大全》 (source: chaggle/blog, src/content/blog/2026/08/14/powershell-pitfalls.md). Rule ids, blog sections, and the SKILL.md tables must stay in one-to-one correspondence.
 - New pitfalls: add the rule to `src/checker.ts` RULES (with selftest cases), keep `--selftest` green, then update the blog post and both SKILL.md tables.
 
 ## Bilingual parity
