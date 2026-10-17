@@ -6,11 +6,11 @@ Installable as a profile plugin: `dsh plugin --profile <name> add @chaggle/dsh-p
 
 ## Features
 
-- **Automatic gate** — subscribes to the official `tools/pre-execute` interception point; every `pwsh` call is statically checked before execution. Blocking violations (R2–R11) return a `deny` whose reason IS the fix guidance; the advisory R1 passes through. `warn` mode only logs.
+- **Automatic gate** — subscribes to the official `tools/pre-execute` interception point; every `pwsh` call is statically checked before execution. Blocking violations (R2–R11, R14, R20) return a `deny` whose reason IS the fix guidance; advisory hits (R1, R12, R13, R15–R19, R21–R23) pass through. `warn` mode only logs.
 - **Bundled skill** — exposes `powershell-check` through `ctx.skills.registerProvider` (the `dsh-skill-badge` pattern), visible and loadable in every session catalog.
 - **Bilingual** — rule text, CLI output (`--lang en|zh`), deny reasons, and docs ship in English and Simplified Chinese.
 - **Single rule source** — the rules engine (`src/checker.ts`) is shared by the gate and the CLI; update once, both follow.
-- **Self-test** — `--selftest` runs a 60-case positive/negative battery (R1–R19, AI-generated-script focused).
+- **Self-test** — `--selftest` runs a 77-case positive/negative battery (R1–R23, AI-generated-script focused, including the false-positive regressions for R10).
 
 ## Install
 
@@ -56,7 +56,7 @@ git clone https://github.com/chaggle/dsh-powershell-check.git "$HOME/.dsh/skills
 | --- | --- | --- |
 | `mode` | `deny` | `deny` blocks pwsh calls with blocking violations; `warn` logs and allows |
 | `lang` | `zh` | Language of deny reasons and warn logs: `zh` or `en` |
-| `analyzer` | `builtin` | `builtin`: bundled R1–R19 rules only. `psscriptanalyzer`: additionally deep-checks every pwsh command with the official PSScriptAnalyzer (install the module on the host; degrades to builtin when missing). Error/ParseError findings deny, warnings are logged |
+| `analyzer` | `builtin` | `builtin`: bundled R1–R23 rules only. `psscriptanalyzer`: additionally deep-checks every pwsh command with the official PSScriptAnalyzer (install the module on the host; degrades to builtin when missing). Error/ParseError findings deny, warnings are logged |
 
 ## CLI
 
@@ -91,6 +91,10 @@ Exit codes: 0 = PASS, 1 = FAIL (violations listed with fixes), 2 = usage error.
 | R17 | advisory | `Write-Host` output bypasses the pipeline | §1-1-4 |
 | R18 | advisory | mojibake artifacts in the checked text (UTF-8 .ps1 read as ANSI/GBK on PS 5.1) | §2-5 |
 | R19 | advisory | `Remove-Item` with a positional FileSystemInfo object (no `-Path`/`-LiteralPath`/`.FullName`) | §5-3 |
+| R20 | blocking | `Invoke-RestMethod`/`-WebRequest` with a string `-Body` carrying non-ASCII (PS 5.1 sends `?`) | §6-1 |
+| R21 | advisory | `ConvertFrom-Json` on lockfile-class JSON (empty property name throws on PS 5.1) | §6-2 |
+| R22 | advisory | piping strings into a native stdin line protocol (`git credential`, `git apply`, `openssl`, `gpg`) | §6-3 |
+| R23 | advisory | `2>&1` on a native command (stderr becomes ErrorRecords on PS 5.1) | §6-4 |
 
 ## PSScriptAnalyzer deep check
 

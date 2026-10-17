@@ -8,7 +8,7 @@ whenToUse: Whenever PowerShell execution is involved - calling the pwsh tool (fo
 
 ## English
 
-This skill is provided by the **@chaggle/dsh-powershell-check** plugin (native Cordis plugin + bundled skill provider). Once the plugin is mounted, **every pwsh tool call automatically passes the `tools/pre-execute` gate**: blocking violations (R2–R11) are denied with a fix-guidance reason; the advisory R1 passes. Use this skill outside the gate: when generating .ps1 files, embedding PowerShell in templates, checking script files, or looking up rules and fixes.
+This skill is provided by the **@chaggle/dsh-powershell-check** plugin (native Cordis plugin + bundled skill provider). Once the plugin is mounted, **every pwsh tool call automatically passes the `tools/pre-execute` gate**: blocking violations are denied with a fix-guidance reason; advisory hits are reported and allowed. Use this skill outside the gate: when generating .ps1 files, embedding PowerShell in templates, checking script files, or looking up rules and fixes.
 
 ### Running the checker (manual)
 
@@ -27,7 +27,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 
-### Rules (R1–R19, mapped to the blog sections)
+### Rules (R1–R23, mapped to the blog sections)
 
 | Rule | Level | Detects | Fix | Blog |
 | --- | --- | --- | --- | --- |
@@ -50,6 +50,10 @@ Exit codes: 0 = PASS; 1 = FAIL (list with fixes); 2 = usage error / empty input.
 | R17 | advisory | Write-Host output bypasses the pipeline | use Write-Output for capturable results | 2-4. Write-Host |
 | R18 | advisory | mojibake artifacts in the checked text (UTF-8 .ps1 read as ANSI/GBK on PS 5.1) | save .ps1 files with Chinese as UTF-8 with BOM; read/check with `-Encoding UTF8` | 2-5. .ps1 encoding |
 | R19 | advisory | `Remove-Item` with a positional FileSystemInfo object (no `-Path`/`-LiteralPath`/`.FullName`) | pass `-Path $items.FullName`, or pipe the items | 5-3. Remove-Item objects |
+| R20 | blocking | `Invoke-RestMethod`/`-WebRequest` with a string `-Body` carrying non-ASCII | send UTF-8 bytes: `-Body ([System.Text.Encoding]::UTF8.GetBytes($json))` | 6-1. HTTP body encoding |
+| R21 | advisory | `ConvertFrom-Json` on lockfile-class JSON (v3 has an empty property name) | parse with node, or PS 7 `-AsHashtable` (see R15) | 6-2. ConvertFrom-Json empty key |
+| R22 | advisory | piping strings into a native stdin line protocol (`git credential`, `git apply`, `openssl`, `gpg`) | redirect a file: `cmd /c "git credential fill < in.txt > out.txt"` | 6-3. Native stdin |
+| R23 | advisory | `2>&1` on a native command (stderr becomes ErrorRecords) | `2>$null` when only stdout matters; else set ErrorActionPreference=Continue and stringify | 6-4. Native stderr |
 
 ### Writing rules for generated .ps1 (not covered by the checker)
 
@@ -71,7 +75,7 @@ With the plugin configured as `analyzer: psscriptanalyzer`, every pwsh command i
 
 ## 中文
 
-本技能由 **@chaggle/dsh-powershell-check** 插件提供（原生 Cordis 插件 + bundled 技能 provider）。插件安装后，**每次 pwsh 工具调用都会自动经过 `tools/pre-execute` 门禁**：命中 R2–R11 阻断级坑位 → 直接拒绝（deny reason 即修复指引）；仅命中 R1 建议级 → 放行。本技能用于门禁之外的场景：生成 .ps1、把命令嵌入模板、检查脚本文件，以及查阅规则与修复方法。
+本技能由 **@chaggle/dsh-powershell-check** 插件提供（原生 Cordis 插件 + bundled 技能 provider）。插件安装后，**每次 pwsh 工具调用都会自动经过 `tools/pre-execute` 门禁**：命中阻断级坑位 → 直接拒绝（deny reason 即修复指引）；仅命中建议级 → 放行。本技能用于门禁之外的场景：生成 .ps1、把命令嵌入模板、检查脚本文件，以及查阅规则与修复方法。
 
 ### 运行检查器（手动检查）
 
@@ -90,7 +94,7 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 
 退出码：0 = PASS；1 = FAIL（输出清单含修复）；2 = 用法错误或空输入。
 
-### 内置规则（R1–R19，与博客章节一一对应）
+### 内置规则（R1–R23，与博客章节一一对应）
 
 | 规则 | 级别 | 检测内容 | 修复 | 博客章节 |
 | --- | --- | --- | --- | --- |
@@ -113,6 +117,10 @@ node "<resourceBase>/scripts/check-pwsh.mjs" --selftest
 | R17 | 建议 | Write-Host 输出不进管道 | 需捕获结果用 Write-Output | 2-4、Write-Host |
 | R18 | 建议 | 检查文本出现乱码特征（UTF-8 无 BOM 的 .ps1 被 PS 5.1 按 ANSI/GBK 解析） | 含中文的 .ps1 保存为 UTF-8 with BOM；读取/检查用 -Encoding UTF8 | 2-5、.ps1 编码 |
 | R19 | 建议 | Remove-Item 位置参数传文件系统对象（无 -Path/-LiteralPath/.FullName） | 用 -Path $items.FullName 传完整路径，或管道传入 | 5-3、Remove-Item 对象 |
+| R20 | 阻断 | Invoke-RestMethod/-WebRequest 用字符串 -Body 发非 ASCII | 改发 UTF-8 字节：-Body ([System.Text.Encoding]::UTF8.GetBytes($json)) | 6-1、HTTP body 编码 |
+| R21 | 建议 | ConvertFrom-Json 解析 lockfile 类 JSON（v3 含空键名会报错） | 用 node 解析，或 PS 7 的 -AsHashtable（见 R15） | 6-2、ConvertFrom-Json 空键 |
+| R22 | 建议 | 管道喂原生程序 stdin 行协议（git credential / git apply / openssl / gpg） | 改用文件重定向：cmd /c "git credential fill < in.txt > out.txt" | 6-3、原生 stdin |
+| R23 | 建议 | 原生命令带 2>&1（stderr 变成 ErrorRecord） | 只看 stdout 用 2>$null；要合并先设 ErrorActionPreference=Continue 再转字符串 | 6-4、原生 stderr |
 
 ### 生成 .ps1 的写作规则（检查器覆盖不到的写作侧）
 

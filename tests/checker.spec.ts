@@ -42,6 +42,28 @@ const CASES: ReadonlyArray<{ label: string; cmd: string; expect: string[] }> = [
   { label: 'R19 fullname ok', cmd: 'Remove-Item -Recurse -Force -Path $items.FullName', expect: [] },
   { label: 'R19 pipe ok', cmd: 'Get-ChildItem $target -Force | Remove-Item -Recurse -Force', expect: [] },
   { label: 'R19 literalpath ok', cmd: 'Remove-Item -LiteralPath $p -Recurse -Force', expect: [] },
+  // R10 false positives: a bare npm/npx/pnpm word *inside a string* is text, not a command.
+  { label: 'R10 quoted label ok', cmd: "Write-Output '--- npm audit summary ---'", expect: [] },
+  { label: 'R10 commit message ok', cmd: "git commit -m 'chore: pnpm upgrade to 12.14.0'", expect: [] },
+  { label: 'R10 double-quoted ok', cmd: 'Write-Output "npm install notes"', expect: [] },
+  { label: 'R10 after semicolon', cmd: 'git status; npm run build', expect: ['R10'] },
+  { label: 'R5 quoted mention ok', cmd: "git log --grep 'Start-Process'", expect: [] },
+  { label: 'R17 quoted mention ok', cmd: "git commit -m 'fix Write-Host usage'", expect: [] },
+  // R20: a string -Body on PS 5.1 loses non-ASCII characters.
+  { label: 'R20 irm non-ascii body', cmd: "$comment = '中文说明'; Invoke-RestMethod -Uri $u -Method POST -Body $body", expect: ['R20'] },
+  { label: 'R20 utf8 bytes ok', cmd: 'Invoke-RestMethod -Uri $u -Method POST -Body ([System.Text.Encoding]::UTF8.GetBytes($json))', expect: [] },
+  { label: 'R20 ascii body ok', cmd: 'Invoke-RestMethod -Uri $u -Method POST -Body $body', expect: [] },
+  // R21: ConvertFrom-Json on lockfile-class JSON.
+  { label: 'R21 lockfile json', cmd: "$lock = Get-Content 'package-lock.json' -Raw | ConvertFrom-Json", expect: ['R21'] },
+  { label: 'R21 node parse ok', cmd: 'node tool.mjs package-lock.json', expect: [] },
+  // R22: piping strings into a native stdin line protocol.
+  { label: 'R22 credential pipe', cmd: "@('protocol=https','host=github.com','') | git credential fill", expect: ['R22'] },
+  { label: 'R22 cmd redirect ok', cmd: 'cmd /c "git credential fill < in.txt > out.txt"', expect: [] },
+  { label: 'R22 normal pipe ok', cmd: 'git log | Select-String fix', expect: [] },
+  // R23: 2>&1 on a native command becomes ErrorRecords on PS 5.1.
+  { label: 'R23 native 2>&1', cmd: 'git push origin master 2>&1 | Select-String master', expect: ['R23'] },
+  { label: 'R23 drop stderr ok', cmd: 'git push origin master 2>$null', expect: [] },
+  { label: 'R23 cmdlet 2>&1 ok', cmd: 'Get-ChildItem x 2>&1 | Out-String', expect: [] },
 ]
 
 describe('checker rules battery', () => {

@@ -49,6 +49,46 @@ function hasWord(text: string, word: string): boolean {
   return false
 }
 
+/**
+ * Blank out everything inside single/double-quoted strings (and here-strings), keeping
+ * the length and the newlines intact, so command-position rules (R5/R10/R16/R17) never
+ * match words that are only *mentioned* in text.
+ *
+ * Real-session false positives this fixes: `Write-Output '--- npm audit summary ---'`
+ * and `git commit -m 'chore: pnpm upgrade'` were both denied by R10.
+ */
+function maskStrings(cmd: string): string {
+  const out = cmd.split('')
+  let quote: string | null = null
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i]
+    if (quote === null) {
+      const isHereStart = i > 0 && cmd[i - 1] === '@' && (ch === '\'' || ch === '"')
+      if (isHereStart) {
+        const close = ch === '\'' ? "\n'@" : '\n"@'
+        const end = cmd.indexOf(close, i)
+        const stop = end < 0 ? cmd.length : end + close.length
+        for (let k = i + 1; k < stop; k++) { if (cmd[k] !== '\n') out[k] = ' ' }
+        i = stop - 1
+        continue
+      }
+      if (ch === '\'' || ch === '"') { quote = ch }
+      continue
+    }
+    if (quote === '"' && ch === '`') {
+      if (i + 1 < cmd.length) { out[i + 1] = ' '; i++ }
+      continue
+    }
+    if (ch === quote) {
+      if (quote === '\'' && cmd[i + 1] === '\'') { out[i + 1] = ' '; i++; continue }
+      quote = null
+      continue
+    }
+    if (ch !== '\n') out[i] = ' '
+  }
+  return out.join('')
+}
+
 interface VarHit { readonly start: number; readonly end: number; readonly braced: boolean; readonly name: string; readonly followedBy: string }
 
 /** Collect $name / ${name} variable occurrences. */
@@ -113,7 +153,7 @@ function r4DollarInDoubleQuotedPath(cmd: string): boolean {
   }
   return false
 }
-function r5StartProcess(cmd: string): boolean { return hasWord(cmd, 'Start-Process') }
+function r5StartProcess(cmd: string): boolean { return hasWord(maskStrings(cmd), 'Start-Process') }
 function r6FeatureNameArray(cmd: string): boolean {
   const lines = cmd.split('\n')
   for (const ln of lines) {
@@ -143,14 +183,15 @@ function r9CurlResume(cmd: string): boolean {
 }
 /** R10: npm/npx/pnpm invoked without the .cmd suffix — PowerShell blocks npm.ps1 (ExecutionPolicy). */
 function r10NpmCmd(cmd: string): boolean {
+  const text = maskStrings(cmd)
   const names = ['npm', 'npx', 'pnpm']
   const allowedBefore = ' ;|&' + String.fromCharCode(9)
   for (const name of names) {
-    for (let i = 0; i < cmd.length; i++) {
-      const prev = i > 0 ? cmd[i - 1] : ''
+    for (let i = 0; i < text.length; i++) {
+      const prev = i > 0 ? text[i - 1] : ''
       if (prev !== '' && allowedBefore.indexOf(prev) < 0) continue
-      if (cmd.slice(i, i + name.length).toLowerCase() !== name) continue
-      const after = i + name.length < cmd.length ? cmd[i + name.length] : ''
+      if (text.slice(i, i + name.length).toLowerCase() !== name) continue
+      const after = i + name.length < text.length ? text[i + name.length] : ''
       if (after === '.') continue
       if (after !== '' && after !== ' ' && after !== '"' && after !== '\'' && after !== '\t') continue
       return true
@@ -242,7 +283,7 @@ function r15Ps7OnlySyntax(cmd: string): boolean {
 }
 // R16: cmd-style commands or %VAR% environment syntax mixed into PowerShell.
 function r16CmdStyle(cmd: string): boolean {
-  const lines = cmd.split('\n')
+  const lines = maskStrings(cmd).split('\n')
   const tokens = ['del ', 'copy ', 'move ', 'mkdir ']
   for (const ln of lines) {
     const low = ln.toLowerCase()
@@ -264,7 +305,7 @@ function r16CmdStyle(cmd: string): boolean {
 }
 // R17: Write-Host sends output to the host console, not the pipeline.
 function r17WriteHost(cmd: string): boolean {
-  return hasWord(cmd, 'Write-Host')
+  return hasWord(maskStrings(cmd), 'Write-Host')
 }
 // R18: a UTF-8 .ps1 file saved WITHOUT BOM is decoded as ANSI (GBK) by Windows
 // PowerShell 5.1 — Chinese literals become mojibake and quotes can unbalance into
@@ -293,7 +334,63 @@ function r19RemoveItemObject(cmd: string): boolean {
   return false
 }
 
-/** Pitfall rules: R1/R12/R13/R15/R16/R17 advisory, the rest blocking. */
+// R20: a string -Body handed to Invoke-RestMethod/-WebRequest is encoded with the
+// PS 5.1 default code page, so non-ASCII payloads arrive as '?' (silent corruption).
+function r20HttpBodyEncoding(cmd: string): boolean {
+  if (!/Invoke-(RestMethod|WebRequest)/i.test(cmd)) return false
+  if (!/[^\x00-\x7F]/.test(cmd)) return false
+  if (!/(^|[\s;|(&])-Body([\s:=]|$)/i.test(cmd)) return false
+  if (/GetBytes|Text\.Encoding|Encoding\]::/i.test(cmd)) return false
+  return true
+}
+// R21: PS 5.1 ConvertFrom-Json cannot build an object with an EMPTY property name —
+// package-lock.json v3 has one (the "" root entry) — and throws "Cannot process argument
+// because the value of argument 'name' is not valid". Parse such files with node instead.
+function r21ConvertFromJsonLockfile(cmd: string): boolean {
+  const lines = cmd.split('\n')
+  for (const ln of lines) {
+    if (!ln.includes('ConvertFrom-Json')) continue
+    if (/(package-lock|npm-shrinkwrap|pnpm-lock|yarn\.lock|\.lock\b)/i.test(ln)) return true
+  }
+  return false
+}
+// R22: pumping PowerShell strings into a native stdin line protocol loses blank lines.
+// `git credential fill` fails with "refusing to work with credential missing protocol field".
+function r22NativeStdinPipe(cmd: string): boolean {
+  const targets = ['git credential', 'git apply', 'git am', 'openssl ', 'gpg ']
+  const lines = cmd.split('\n')
+  for (const ln of lines) {
+    if (!ln.includes('|') || ln.includes('||')) continue
+    const seg = ln.slice(ln.lastIndexOf('|') + 1).trim().toLowerCase()
+    for (const t of targets) {
+      if (seg.startsWith(t)) return true
+    }
+  }
+  return false
+}
+// R23: `2>&1` on a native command wraps every stderr line into an ErrorRecord on
+// PS 5.1 ("NativeCommandError"), and terminates outright under ErrorActionPreference=Stop.
+function r23NativeStderrMerge(cmd: string): boolean {
+  const markerHints = ['.exe', '.bat', '.ps1', '.cmd ']
+  const natives = ['git ', 'node ', 'npm.cmd', 'npx.cmd', 'pnpm.cmd', 'curl ', 'dism ', 'wsl ', 'python ', 'docker ', 'gh ', 'ffmpeg ', 'dotnet ', 'cargo ', 'java ', 'openssl ', 'ssh ', 'pwsh ', 'powershell ']
+  const lines = cmd.split('\n')
+  for (const ln of lines) {
+    if (!ln.includes('2>&1')) continue
+    const low = ln.toLowerCase()
+    if (low.includes('cmd /c') || low.includes('cmd.exe /c')) continue
+    let native = markerHints.some((m) => low.includes(m))
+    if (!native) {
+      const t = low.trim()
+      for (const n of natives) {
+        if (t.startsWith(n) || t.includes('; ' + n) || t.includes('| ' + n) || t.includes('& ' + n)) { native = true; break }
+      }
+    }
+    if (native) return true
+  }
+  return false
+}
+
+/** Pitfall rules: R1/R12/R13/R15/R16/R17/R18/R19/R21/R22/R23 advisory, the rest blocking. */
 export const RULES: readonly Rule[] = [
   { id: 'R1', severity: 'advisory', title: '中文输出可能 GBK 乱码', titleEn: 'Possible GBK mojibake for Chinese console output', blog: '§2-3', test: r1Gbk,
     fix: '命令涉及 wsl/Windows 功能查询且未见 chcp：输出中文前先 `chcp 65001 | Out-Null`（或设置 [Console]::OutputEncoding）。',
@@ -352,6 +449,18 @@ export const RULES: readonly Rule[] = [
   { id: 'R19', severity: 'advisory', title: 'Remove-Item 传文件系统对象按当前目录解析', titleEn: 'Remove-Item resolves FileSystemInfo objects against the current directory', blog: '§5-3', test: r19RemoveItemObject,
     fix: 'PS 5.1 把位置参数传入的文件系统对象经 ToString() 转成 -Path：DirectoryInfo 只返回目录名，会相对当前目录解析 → `Cannot find path`。用 `-Path $items.FullName` 传完整路径，或改用管道 `| Remove-Item`。',
     fixEn: 'PS 5.1 converts positional FileSystemInfo arguments to -Path via ToString(); a DirectoryInfo yields only its bare name, resolved against the CWD → `Cannot find path`. Pass `-Path $items.FullName`, or pipe the items into Remove-Item.' },
+  { id: 'R20', severity: 'blocking', title: 'Invoke-RestMethod 用字符串 -Body 发非 ASCII 会变成问号', titleEn: 'Invoke-RestMethod string -Body mangles non-ASCII on PS 5.1', blog: '§6-1', test: r20HttpBodyEncoding,
+    fix: 'PS 5.1 按默认代码页把字符串 body 编成字节：中文到服务端变成 ?，是静默数据损坏。改发 UTF-8 字节：`-Body ([System.Text.Encoding]::UTF8.GetBytes($json))`，并把 -ContentType 设为 application/json; charset=utf-8。',
+    fixEn: 'PS 5.1 encodes a string body with the default code page, so Chinese reaches the server as ? (silent corruption). Send UTF-8 bytes: `-Body ([System.Text.Encoding]::UTF8.GetBytes($json))`, with -ContentType set to application/json; charset=utf-8.' },
+  { id: 'R21', severity: 'advisory', title: 'ConvertFrom-Json 遇到空键名会报 name 无效（package-lock.json 必踩）', titleEn: 'ConvertFrom-Json fails on empty property names (package-lock.json)', blog: '§6-2', test: r21ConvertFromJsonLockfile,
+    fix: 'PS 5.1 的 ConvertFrom-Json 无法把空属性名（package-lock.json v3 的 packages[""] 根条目）转成对象，抛 Cannot process argument because the value of argument name is not valid；仅大小写不同的重复键则是另一条 duplicated keys 报错。这类文件改用 node 解析，或升级到 PS 7 用 -AsHashtable（见 R15）。',
+    fixEn: 'PS 5.1 ConvertFrom-Json cannot turn an EMPTY property name into an object (package-lock.json v3 has one: the "" root entry) and throws "Cannot process argument because the value of argument name is not valid"; duplicate keys differing only by case fail with a separate duplicated-keys error. Parse such files with node, or move to PS 7 with -AsHashtable (see R15).' },
+  { id: 'R22', severity: 'advisory', title: '管道喂原生程序 stdin 会丢空行（git credential 等）', titleEn: 'Piping into a native stdin protocol loses blank lines (git credential)', blog: '§6-3', test: r22NativeStdinPipe,
+    fix: 'PS 5.1 把集合逐项喂给原生命令时，空行与二进制内容不可靠：git credential fill 会报 "refusing to work with credential missing protocol field"。改用文件重定向：`cmd /c "git credential fill < in.txt > out.txt"`。',
+    fixEn: 'PS 5.1 feeds collections to native commands item by item, so blank lines and binary content are unreliable: git credential fill fails with "refusing to work with credential missing protocol field". Redirect a file instead: `cmd /c "git credential fill < in.txt > out.txt"`.' },
+  { id: 'R23', severity: 'advisory', title: '原生命令的 2>&1 会把 stderr 变成 ErrorRecord', titleEn: '2>&1 on a native command turns stderr into ErrorRecords', blog: '§6-4', test: r23NativeStderrMerge,
+    fix: 'PS 5.1 里 `git ... 2>&1` 会把每行 stderr 包成 ErrorRecord（输出出现 "git : ... NativeCommandError"），配合 ErrorActionPreference=Stop 还会直接终止。只看 stdout 用 `2>$null`；要合并则先把 ErrorActionPreference 设为 Continue，再 `| ForEach-Object { "$_" }` 转成字符串。',
+    fixEn: 'On PS 5.1 `git ... 2>&1` wraps every stderr line in an ErrorRecord (output shows "git : ... NativeCommandError"), and under ErrorActionPreference=Stop it terminates outright. Use `2>$null` when only stdout matters; to merge, set ErrorActionPreference=Continue and stringify with `| ForEach-Object { "$_" }`.' },
 ]
 
 /** Run every rule against one command and return the matching rule objects. */
@@ -359,7 +468,7 @@ export function run(cmd: string): Rule[] {
   return RULES.filter((r) => r.test(cmd))
 }
 
-/** Gate view: split matches into blocking (R2–R11, R14) and advisory buckets. */
+/** Gate view: split matches into blocking and advisory buckets. */
 export function check(cmd: string): CheckResult {
   const all = run(cmd)
   return {
@@ -437,6 +546,28 @@ export function selftest(): number {
     { label: 'R19 fullname ok', cmd: 'Remove-Item -Recurse -Force -Path $items.FullName', expect: [] },
     { label: 'R19 pipe ok', cmd: 'Get-ChildItem $target -Force | Remove-Item -Recurse -Force', expect: [] },
     { label: 'R19 literalpath ok', cmd: 'Remove-Item -LiteralPath $p -Recurse -Force', expect: [] },
+    // R10 false positives: a bare npm/npx/pnpm word *inside a string* is text, not a command.
+    { label: 'R10 quoted label ok', cmd: "Write-Output '--- npm audit summary ---'", expect: [] },
+    { label: 'R10 commit message ok', cmd: "git commit -m 'chore: pnpm upgrade to 12.14.0'", expect: [] },
+    { label: 'R10 double-quoted ok', cmd: 'Write-Output "npm install notes"', expect: [] },
+    { label: 'R10 after semicolon', cmd: 'git status; npm run build', expect: ['R10'] },
+    { label: 'R5 quoted mention ok', cmd: "git log --grep 'Start-Process'", expect: [] },
+    { label: 'R17 quoted mention ok', cmd: "git commit -m 'fix Write-Host usage'", expect: [] },
+    // R20: a string -Body on PS 5.1 loses non-ASCII characters.
+    { label: 'R20 irm non-ascii body', cmd: "$comment = '中文说明'; Invoke-RestMethod -Uri $u -Method POST -Body $body", expect: ['R20'] },
+    { label: 'R20 utf8 bytes ok', cmd: 'Invoke-RestMethod -Uri $u -Method POST -Body ([System.Text.Encoding]::UTF8.GetBytes($json))', expect: [] },
+    { label: 'R20 ascii body ok', cmd: 'Invoke-RestMethod -Uri $u -Method POST -Body $body', expect: [] },
+    // R21: ConvertFrom-Json on lockfile-class JSON.
+    { label: 'R21 lockfile json', cmd: "$lock = Get-Content 'package-lock.json' -Raw | ConvertFrom-Json", expect: ['R21'] },
+    { label: 'R21 node parse ok', cmd: 'node tool.mjs package-lock.json', expect: [] },
+    // R22: piping strings into a native stdin line protocol.
+    { label: 'R22 credential pipe', cmd: "@('protocol=https','host=github.com','') | git credential fill", expect: ['R22'] },
+    { label: 'R22 cmd redirect ok', cmd: 'cmd /c "git credential fill < in.txt > out.txt"', expect: [] },
+    { label: 'R22 normal pipe ok', cmd: 'git log | Select-String fix', expect: [] },
+    // R23: 2>&1 on a native command becomes ErrorRecords on PS 5.1.
+    { label: 'R23 native 2>&1', cmd: 'git push origin master 2>&1 | Select-String master', expect: ['R23'] },
+    { label: 'R23 drop stderr ok', cmd: 'git push origin master 2>$null', expect: [] },
+    { label: 'R23 cmdlet 2>&1 ok', cmd: 'Get-ChildItem x 2>&1 | Out-String', expect: [] },
   ]
   let failures = 0
   for (const c of cases) {

@@ -7,7 +7,7 @@ import { analyzeWithPssa, formatPssaHits, parsePssaJson } from '../src/pssa.ts'
 function fakeShell(stdout: string, exitCode = 0) {
   return {
     resolve: (request: unknown) => request as never,
-    run: async () => ({ exitCode, stdout: { text: stdout }, stderr: { text: '' } }) as never,
+    execute: async () => ({ result: async () => ({ exitCode, stdout: { text: stdout }, stderr: { text: '' } }) }) as never,
   }
 }
 
@@ -76,7 +76,7 @@ describe('analyzeWithPssa', () => {
   it('never throws on executor failure', async () => {
     const shell = {
       resolve: (request: unknown) => request as never,
-      run: async () => { throw new Error('executor down') },
+      execute: async () => { throw new Error('executor down') },
     }
     const out = await analyzeWithPssa('Write-Output hi', shell as never)
     expect(out.status).toBe('failed')
@@ -94,7 +94,7 @@ describe('gate with analyzer: psscriptanalyzer', () => {
       skills: { registerProvider: () => undefined },
       shell: {
         resolve: (request: unknown) => request as never,
-        run: async () => ({ exitCode: 0, stdout: { text: shellStdout }, stderr: { text: '' } }) as never,
+        execute: async () => ({ result: async () => ({ exitCode: 0, stdout: { text: shellStdout }, stderr: { text: '' } }) }) as never,
       },
     }
     return { ctx: ctx as unknown as Context, listeners, logs }
