@@ -106,7 +106,8 @@ export async function analyzeWithPssa(
   try {
     writeFileSync(file, BOM + command, 'utf8')
     const request = { command: buildPssaCommand(file), timeoutMs: options.timeoutMs ?? 60_000, signal: options.signal }
-    const result = await shell.run(shell.resolve(request))
+    const execution = await shell.execute(shell.resolve(request))
+    const result = await execution.result()
     const stdout = result.stdout.text.trim()
     const stderr = result.stderr.text.trim()
     if (stdout === PSSA_MISSING) return { status: 'missing', errors: [], warnings: [] }

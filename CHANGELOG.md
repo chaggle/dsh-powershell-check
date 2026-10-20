@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.0 — 2026-10-17
+
+- **新增 R20–R23**（源自一次真实仓库维护会话：GitHub API 批量操作 + 依赖升级 + 分支合并）：
+  - **R20（阻断）Invoke-RestMethod / Invoke-WebRequest 用字符串 `-Body` 发非 ASCII**：PS 5.1 按默认代码页把字符串编成字节，中文到服务端变成 `?`（静默数据损坏）；改为 `-Body ([System.Text.Encoding]::UTF8.GetBytes($json))`。实测把 GitHub 告警驳回说明写成 `???????`，只能先 reopen 再以 UTF-8 字节重发。
+  - **R21（建议）`ConvertFrom-Json` 解析 package-lock.json 抛 name 无效**：lockfile v3 的 `packages[""]` 是空属性名，PS 5.1 无法把空键转成对象（`Cannot process argument because the value of argument name is not valid`）；仅大小写不同的重复键是另一条 duplicated keys 报错。这类文件改用 node 解析。
+  - **R22（建议）管道喂原生程序 stdin 会丢空行**：`@('protocol=https','host=github.com','') | git credential fill` 报 "refusing to work with credential missing protocol field"；改用 `cmd /c "... < in.txt > out.txt"` 文件重定向。
+  - **R23（建议）原生命令的 `2>&1` 把 stderr 变成 ErrorRecord**：输出里出现 `NativeCommandError` 包裹，`$ErrorActionPreference='Stop'` 下直接终止；只看 stdout 用 `2>$null`，要合并则先设 Continue 再转字符串。
+- **修复 R10 误报**：R10 原先对整段命令原文匹配，字符串里出现的 `npm`/`npx`/`pnpm` 也被拦截（`Write-Output '--- npm audit summary ---'`、`git commit -m 'chore: pnpm ...'` 各被误 deny 一次）。新增 `maskStrings()`，R5/R10/R16/R17 只在字符串之外匹配，并补了对应正反例。
+- `--selftest` 60 → 77 组；vitest 24 个用例、typecheck、build 全绿。
+- **New R20–R23 + R10 false-positive fix** (from a real repo-maintenance session: GitHub API batch operations, dependency upgrade, branch merge). PS 5.1 encodes a string HTTP body with the default code page (Chinese arrives as `?`), `ConvertFrom-Json` chokes on package-lock.json's empty root key, PowerShell pipelines corrupt native stdin line protocols, and `2>&1` wraps native stderr in ErrorRecords. R10 no longer flags npm/npx/pnpm words quoted inside strings (`maskStrings()`); selftest 60 → 77 cases.
+
+## 0.5.3 — 2026-09-29
+
+- **适配 dsh 0.2.0-rc.2**：`ctx.shell` 的执行入口由 `run(spec)` 收敛为 `execute(spec)` + `execution.result()`，PSScriptAnalyzer 深度检查路径同步更新——0.1.7 起 `run` 已不存在，该路径抛错后被 catch 静默降级为内置规则；
+- `peerDependencies` / `devDependencies` 中的 `@deepseek-ai/dsh-{shell,skill,tools}` 对齐 `^0.2.0-rc.2`，dsh 启动时的兼容性预检不再拒绝该插件行（原 `^0.1.0-rc.6` 不覆盖 0.2.0-rc.2）；
+- typecheck / vitest / build / selftest 全绿。
+- **dsh 0.2.0-rc.2 compatibility**: the `ctx.shell` entry converged from `run(spec)` to `execute(spec)` + `execution.result()`, and the PSScriptAnalyzer deep-check path follows it — on 0.1.7+ `run` no longer existed, so that path threw and was caught into a silent degrade to the builtin rules. Peer ranges realigned to `^0.2.0-rc.2` so the dsh compatibility preflight admits the plugin row.
+
 ## 0.5.2 — 2026-08-24
 
 - **新增 R18 / R19**（博客文章新增 2-5、5-3 两节，源自 Frosti 迁移实战）：

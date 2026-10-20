@@ -6,11 +6,11 @@
 
 ## 特性
 
-- **自动门禁**：订阅官方 `tools/pre-execute` 拦截点，每次 `pwsh` 调用前自动静态检查；命中 R2–R11 阻断级坑位 → 返回 `deny`（deny reason 即修复指引）；R1 建议级放行；`warn` 模式只记日志；
+- **自动门禁**：订阅官方 `tools/pre-execute` 拦截点，每次 `pwsh` 调用前自动静态检查；命中阻断级坑位（R2–R11、R14、R20）→ 返回 `deny`（deny reason 即修复指引）；建议级（R1、R12、R13、R15–R19、R21–R23）放行；`warn` 模式只记日志；
 - **内置技能**：通过 `ctx.skills.registerProvider`（官方 `dsh-skill-badge` 同款写法）暴露 `powershell-check`，每个会话目录可见、可加载；
 - **中英双语**：规则文本、CLI 输出（`--lang en|zh`）、deny reason 与文档均提供中英版本；
 - **单一规则源**：规则引擎（`src/checker.ts`）被门禁与 CLI 共用，改一处全生效；
-- **自检**：`--selftest` 内置 60 组正反例（R1–R19，聚焦 AI 生成脚本）。
+- **自检**：`--selftest` 内置 77 组正反例（R1–R23，聚焦 AI 生成脚本，含 R10 误报回归用例）。
 
 ## 安装
 
@@ -56,7 +56,7 @@ git clone https://github.com/chaggle/dsh-powershell-check.git "$HOME/.dsh/skills
 | --- | --- | --- |
 | `mode` | `deny` | `deny` 命中阻断级坑位直接拒绝；`warn` 只记日志放行 |
 | `lang` | `zh` | deny reason 与日志语言：`zh` 或 `en` |
-| `analyzer` | `builtin` | `builtin`：仅内置 R1–R19；`psscriptanalyzer`：额外用官方 PSScriptAnalyzer 对每条 pwsh 命令深检（宿主机需安装模块，缺模块自动降级内置）。Error/ParseError 拦截，Warning 记日志放行 |
+| `analyzer` | `builtin` | `builtin`：仅内置 R1–R23；`psscriptanalyzer`：额外用官方 PSScriptAnalyzer 对每条 pwsh 命令深检（宿主机需安装模块，缺模块自动降级内置）。Error/ParseError 拦截，Warning 记日志放行 |
 
 ## CLI
 
@@ -91,6 +91,10 @@ node scripts/check-pwsh.mjs --selftest
 | R17 | 建议 | `Write-Host` 输出不进管道 | 2-4 |
 | R18 | 建议 | 检查文本出现乱码特征（PS 5.1 把无 BOM 的 UTF-8 .ps1 按 ANSI/GBK 解析） | 2-5 |
 | R19 | 建议 | `Remove-Item` 位置参数传文件系统对象（无 `-Path`/`-LiteralPath`/`.FullName`） | 5-3 |
+| R20 | 阻断 | `Invoke-RestMethod`/`-WebRequest` 用字符串 `-Body` 发非 ASCII（PS 5.1 会变成 `?`） | 6-1 |
+| R21 | 建议 | `ConvertFrom-Json` 解析 lockfile 类 JSON（空键名在 PS 5.1 抛错） | 6-2 |
+| R22 | 建议 | 管道喂原生程序 stdin 行协议（`git credential`/`git apply`/`openssl`/`gpg`） | 6-3 |
+| R23 | 建议 | 原生命令带 `2>&1`（PS 5.1 把 stderr 变成 ErrorRecord） | 6-4 |
 
 ## PSScriptAnalyzer 深度检查
 
