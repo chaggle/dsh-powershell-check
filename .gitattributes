@@ -1,0 +1,4 @@
+# Built artifacts are emitted with LF by tsc/tsdown. Pin their line endings so
+# a Windows checkout with core.autocrlf=true does not report a freshly built
+# lib/ as modified when the committed bytes are identical.
+lib/** text eol=lf
