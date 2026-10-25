@@ -11,12 +11,19 @@
 - **中英双语**：规则文本、CLI 输出（`--lang en|zh`）、deny reason 与文档均提供中英版本；
 - **单一规则源**：规则引擎（`src/checker.ts`）被门禁与 CLI 共用，改一处全生效；
 - **自检**：`--selftest` 内置 77 组正反例（R1–R23，聚焦 AI 生成脚本，含 R10 误报回归用例）。
+- **真实组合验证**：`tests/plugin-load.spec.ts` 在真实 Cordis 上下文 + 真实 `@deepseek-ai/dsh-skill` 注册表上挂载本插件，它依赖的 DSH 服务一旦破坏性变更，在测试阶段就失败，而不是等到 harness 启动。
+
+## 兼容性
+
+基于 dsh `0.2.1-rc.3` 构建并验证。manifest 声明 `engines.dsh: ">=0.2.1-rc.3 <0.3.0"`，并把插件 import 的 DSH 包固定在 `^0.2.1-rc.3`（`@deepseek-ai/dsh-shell`、`dsh-skill`、`dsh-tools`；`@deepseek-ai/cordis` 为 `^4.0.5`）。安装与 profile 启动时的兼容性预检**先读 `engines.dsh`**，运行时不满足即拒绝并提示升级，而不是等插件行加载时才报错。
+
+门禁覆盖所有以 `pwsh` 注册的工具——前台/后台工具与持久 shell 变体同名。
 
 ## 安装
 
 ### 作为 profile 插件（推荐）
 
-包声明了 `dsh.bundle.patch` 并自带 `cordis.patch.yml`，可随 profile 安装：
+包声明了 `dsh.bundle`（patch 为 `./cordis.patch.yml`），可随 profile 安装：
 
 ```text
 dsh plugin --profile <名称> add @chaggle/dsh-powershell-check

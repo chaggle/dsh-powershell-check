@@ -4,10 +4,11 @@
 
 ```text
 src/index.ts          # cordis plugin: tools/pre-execute gate + skill provider
-src/checker.ts        # rules engine (R1-R11, bilingual), shared by gate and CLI
+src/checker.ts        # rules engine (R1-R23, bilingual), shared by gate and CLI
+src/pssa.ts           # optional PSScriptAnalyzer deep check through ctx.shell
 src/invariant.ts      # config normalization
 scripts/check-pwsh.mjs# CLI wrapper around the built lib/checker.js
-tests/                # vitest specs (rules battery + fake-ctx gate)
+tests/                # vitest specs (rules battery, pssa, fake-ctx gate, real-composition load)
 cordis.patch.yml      # dsh.bundle patch: inserts the plugin row
 SKILL.md              # bundled skill body (bilingual)
 ```

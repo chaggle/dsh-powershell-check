@@ -11,12 +11,19 @@ Installable as a profile plugin: `dsh plugin --profile <name> add @chaggle/dsh-p
 - **Bilingual** — rule text, CLI output (`--lang en|zh`), deny reasons, and docs ship in English and Simplified Chinese.
 - **Single rule source** — the rules engine (`src/checker.ts`) is shared by the gate and the CLI; update once, both follow.
 - **Self-test** — `--selftest` runs a 77-case positive/negative battery (R1–R23, AI-generated-script focused, including the false-positive regressions for R10).
+- **Verified on real composition** — `tests/plugin-load.spec.ts` mounts the plugin on a real Cordis context with the real `@deepseek-ai/dsh-skill` registry, so a breaking change in the DSH services it consumes fails the test suite instead of harness boot.
+
+## Compatibility
+
+Built and verified against dsh `0.2.1-rc.3`. The manifest declares `engines.dsh: ">=0.2.1-rc.3 <0.3.0"` and pins the DSH packages the plugin imports (`@deepseek-ai/dsh-shell`, `@deepseek-ai/dsh-skill`, `@deepseek-ai/dsh-tools`, all `^0.2.1-rc.3`; `@deepseek-ai/cordis` `^4.0.5`). Install and profile startup read `engines.dsh` first, so a runtime outside that range is refused with an upgrade prompt instead of failing while the row loads.
+
+The gate covers every tool registered as `pwsh` — the foreground/background tool and the persistent-shell variant share that name.
 
 ## Install
 
 ### As a profile plugin (recommended)
 
-The package declares `dsh.bundle.patch` and ships its own `cordis.patch.yml`, so it is installable per profile:
+The package declares `dsh.bundle` (patch: `./cordis.patch.yml`), so it is installable per profile:
 
 ```text
 dsh plugin --profile <name> add @chaggle/dsh-powershell-check

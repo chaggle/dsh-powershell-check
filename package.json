@@ -1,7 +1,7 @@
 {
   "name": "@chaggle/dsh-powershell-check",
   "description": "Native DeepSeek Harness plugin: gates every pwsh tool call against the PowerShell pitfalls from the blog post 'PowerShell 实战踩坑大全' via the official tools/pre-execute interception point, and bundles the powershell-check skill.",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -47,7 +47,8 @@
     "verify": "npm run typecheck && npm test && npm run build && node scripts/check-pwsh.mjs --selftest"
   },
   "engines": {
-    "node": "^22.19 || >=24"
+    "node": "^22.19 || >=24",
+    "dsh": ">=0.2.1-rc.3 <0.3.0"
   },
   "keywords": ["dsh", "agent-harness", "deepseek-harness", "powershell", "pwsh", "plugin", "skill", "cordis"],
   "publishConfig": {
@@ -59,16 +60,16 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-shell": "^0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill": "^0.2.0-rc.2",
-    "@deepseek-ai/dsh-tools": "^0.2.0-rc.2"
+    "@deepseek-ai/cordis": "^4.0.5",
+    "@deepseek-ai/dsh-shell": "^0.2.1-rc.3",
+    "@deepseek-ai/dsh-skill": "^0.2.1-rc.3",
+    "@deepseek-ai/dsh-tools": "^0.2.1-rc.3"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-shell": "^0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill": "^0.2.0-rc.2",
-    "@deepseek-ai/dsh-tools": "^0.2.0-rc.2",
+    "@deepseek-ai/cordis": "^4.0.5",
+    "@deepseek-ai/dsh-shell": "^0.2.1-rc.3",
+    "@deepseek-ai/dsh-skill": "^0.2.1-rc.3",
+    "@deepseek-ai/dsh-tools": "^0.2.1-rc.3",
     "@types/node": "24",
     "tsdown": "0.22.14",
     "typescript": "^7.0.2",

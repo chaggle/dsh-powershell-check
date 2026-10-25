@@ -20,5 +20,7 @@ npm run typecheck && npm test && npm run build && npm run selftest
 ```
 
 - `lib/` (bundles + declarations) is tracked on purpose so github: installs do not rebuild inside the harness workspace; never commit `lib/types/**/*.js` intermediates.
+- `tests/plugin-load.spec.ts` is the real-composition test: it mounts the plugin beside the installed `@deepseek-ai/dsh-skill` registry, so a DSH service contract it consumes breaks the suite instead of harness boot.
+- Bumping the dsh peers means bumping `engines.dsh` with them; dsh reads `engines.dsh` first and ignores the DSH peer ranges once it is declared.
 - Version bumps go with a `v<semver>` tag.
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.1 — 2026-10-25
+
+- **适配 dsh 0.2.1-rc.3**（npm `next` 通道，与 deepseek-harness master 同版本）：
+  - `peerDependencies` / `devDependencies` 中的 `@deepseek-ai/dsh-{shell,skill,tools}` 对齐 `^0.2.1-rc.3`，`@deepseek-ai/cordis` 对齐 `^4.0.5`；旧范围 `^0.2.0-rc.2` 不覆盖 0.2.1 的预发布版本，兼容性预检会拒绝该插件行；
+  - 新增 `engines.dsh: ">=0.2.1-rc.3 <0.3.0"`：自 dsh 0.2.1-alpha.3 起，兼容性预检**优先读 `engines.dsh`**（声明了它就不再读 DSH peer 范围），显式写明支持的运行时区间；
+  - 复核插件消费的扩展点，0.2.0-rc.2 → 0.2.1-rc.3 无破坏性变更：`tools/pre-execute` 瀑布仍是 `(exec, next) => PreToolDecision`、`ctx.skills.registerProvider(control => provider)`、`ctx.shell.resolve/execute` 与 `execution.result()` 均未变；
+  - 新增真实组合加载测试 `tests/plugin-load.spec.ts`：在真实 Cordis 上下文里挂载真实 `@deepseek-ai/dsh-skill` 注册表，验证技能注册与正文加载、`tools/pre-execute` 的拒绝/放行、以及插件 fiber 释放后 provider 撤销；
+  - 重建 `lib/`（rolldown 区域注释格式更新，无行为变更）；typecheck / vitest（27 例）/ build / selftest（77 例）全绿；
+- **dsh 0.2.1-rc.3 compatibility**: DSH peers realigned to `^0.2.1-rc.3` and `@deepseek-ai/cordis` to `^4.0.5` (the old `^0.2.0-rc.2` range excludes 0.2.1 prereleases, so the compatibility preflight would reject the row); `engines.dsh: ">=0.2.1-rc.3 <0.3.0"` added because dsh 0.2.1-alpha.3+ reads `engines.dsh` first and ignores DSH peer ranges once it is declared. The consumed extension points were re-checked against the new source: `tools/pre-execute` (`(exec, next) => PreToolDecision`), `ctx.skills.registerProvider(control => provider)`, and `ctx.shell.resolve/execute` + `execution.result()` are unchanged. New real-composition test mounts the plugin beside the real skill registry and covers skill registration, deny/allow, and provider withdrawal on fiber disposal. `lib/` rebuilt; typecheck, vitest, build, and selftest are green.
+
 ## 0.6.0 — 2026-10-17
 
 - **新增 R20–R23**（源自一次真实仓库维护会话：GitHub API 批量操作 + 依赖升级 + 分支合并）：
