@@ -19,6 +19,8 @@ Built and verified against dsh `0.2.1-rc.3`. The manifest declares `engines.dsh:
 
 The gate covers every tool registered as `pwsh` — the foreground/background tool and the persistent-shell variant share that name.
 
+The development tree pins two `overrides` (`undici`, `zod`) because the published dsh releases resolve versions covered by security advisories. Both stay inside their current major version and apply only to this repository's typecheck and test tree; the published package's runtime dependencies remain the host-provided peers.
+
 ## Install
 
 ### As a profile plugin (recommended)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.2 — 2026-10-25
+
+- **依赖升级，清除 Dependabot 告警**（GitHub 默认分支 5 条 → 0；npm audit 受影响包 20 → 0）：
+  - 根因是 4 组 advisory：`undici` 8.0.0–8.12.1（high ×3：EventSource 无界内存 DoS、SRI 算法大小写绕过、超量 content-encoding 未捕获错误）、`zod` <4.6.6（high：超大约束集合内存耗尽）、`@vitest/mocker` ≤4.1.11（moderate ×2）；
+  - dsh 0.2.1-rc.3 对 `undici`/`zod` 是**精确锁定**（8.11.2 / 4.4.3）且上游尚无修复版本，因此只能在本仓库的 dev 依赖树上加 `overrides`：`undici 8.12.3`、`zod 4.6.7`（均为同大版本内升级）；两条 override 只影响 typecheck 与测试，发布产物的运行时依赖仍只有 host 提供的 peers；
+  - `vitest` `^4.1.11` → `^4.1.12`，一并修掉 `@vitest/mocker` 的两条告警；
+  - 验证：`npm audit` 0 漏洞；typecheck、vitest 27 例、build、selftest 77 例全绿；
+- **Dependency upgrade clearing the Dependabot alerts** (5 on the default branch → 0; 20 affected packages → 0). Four root advisories: `undici` 8.0.0–8.12.1 (three high: EventSource memory DoS, SRI algorithm-token bypass, unhandled content-encoding error DoS), `zod` <4.6.6 (high: memory exhaustion on oversized constrained collections), and `@vitest/mocker` ≤4.1.11 (two moderate). dsh 0.2.1-rc.3 pins `undici` and `zod` exactly and has no fixed release yet, so the remediation is a dev-tree `overrides` block (undici 8.12.3, zod 4.6.7 — both same-major upgrades) plus `vitest ^4.1.12`. `npm audit` is clean; the published package still depends only on host-provided peers.
+
 ## 0.6.1 — 2026-10-25
 
 - **适配 dsh 0.2.1-rc.3**（npm `next` 通道，与 deepseek-harness master 同版本）：
